@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowUpRight, Scale } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'HOME', href: '/' },
@@ -13,150 +13,156 @@ const NAV_ITEMS = [
   { label: 'EVENTS', href: '/events' },
   { label: 'BLOGS', href: '/blogs' },
   { label: 'THE TEAM', href: '/the-team' },
-  { label: 'CONTACT US', href: '/#contact' },
+  { label: 'CONTACT', href: '/#contact' },
 ];
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Close mobile menu on page change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
   return (
     <>
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? 'bg-legal-950/90 backdrop-blur-md border-b border-legal-800/80 py-3 shadow-xl'
-            : 'bg-gradient-to-b from-legal-950/95 via-legal-950/70 to-transparent py-5'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            {/* Brand Logo & Name */}
-            <Link href="/" className="flex items-center space-x-3 group">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gold-500/60 p-0.5 bg-legal-900 group-hover:border-gold-400 transition-colors shadow-lg">
-                <Image
-                  src="/images/logo_sil.png"
-                  alt="Society of Indian Lawyers Logo"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-serif text-2xl font-bold tracking-wider text-white group-hover:text-gold-300 transition-colors">
-                  SIL
-                </span>
-                <span className="text-[10px] tracking-widest uppercase text-gold-400 font-medium hidden sm:inline-block">
-                  Society of Indian Lawyers
-                </span>
-              </div>
+      {/* Floating Island Navigation Architecture */}
+      <header className="fixed top-4 sm:top-6 inset-x-0 z-50 px-4 sm:px-6 pointer-events-none">
+        <div className="max-w-5xl mx-auto floating-island rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between pointer-events-auto transition-all duration-500 ease-spring">
+          {/* Brand Logo & Name */}
+          <Link href="/" className="flex items-center space-x-3 group">
+            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-gold-400/50 bg-legal-900 p-0.5 group-hover:border-gold-300 transition-colors">
+              <Image
+                src="/images/logo_sil.png"
+                alt="Society of Indian Lawyers Seal"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-serif text-lg sm:text-xl font-bold tracking-wider text-white group-hover:text-gold-300 transition-colors">
+                SIL
+              </span>
+              <span className="text-[9px] tracking-[0.2em] uppercase text-gold-400 font-medium hidden md:inline-block">
+                Society of Indian Lawyers
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : item.href.startsWith('/#')
+                  ? false
+                  : pathname.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-[0.14em] uppercase transition-all duration-300 relative ${
+                    isActive
+                      ? 'text-gold-300 font-bold'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {item.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeFloatingIndicator"
+                      className="absolute inset-0 bg-white/10 rounded-full -z-10 border border-gold-400/30"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Button-in-Button CTA & Mobile Hamburger */}
+          <div className="flex items-center space-x-3">
+            <Link
+              href="/#contact"
+              className="hidden sm:inline-flex items-center pl-4 pr-1.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-legal-950 bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 hover:from-gold-200 hover:to-gold-400 shadow-md transition-all duration-300 active:scale-[0.98] group"
+            >
+              <span>Get in Touch</span>
+              <span className="w-6 h-6 rounded-full bg-legal-950/15 flex items-center justify-center ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300">
+                <ArrowUpRight className="w-3.5 h-3.5 text-legal-950" />
+              </span>
             </Link>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  item.href === '/'
-                    ? pathname === '/'
-                    : item.href.startsWith('/#')
-                    ? false
-                    : pathname.startsWith(item.href);
-
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={`px-3 py-2 rounded-md text-xs lg:text-sm font-semibold tracking-wider uppercase transition-all duration-200 relative ${
-                      isActive
-                        ? 'text-gold-300 font-bold'
-                        : 'text-slate-300 hover:text-white hover:bg-legal-800/40'
-                    }`}
-                  >
-                    {item.label}
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeNavIndicator"
-                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-gold-500 to-gold-300 rounded-full"
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Action Button & Mobile Menu Toggle */}
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/#contact"
-                className="hidden lg:inline-flex items-center px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider text-legal-950 bg-gradient-to-r from-gold-400 via-gold-300 to-gold-500 hover:from-gold-300 hover:to-gold-400 shadow-md hover:shadow-gold-500/20 transition-all duration-200"
-              >
-                <span>Get in Touch</span>
-                <ArrowUpRight className="ml-1 w-3.5 h-3.5" />
-              </Link>
-
-              {/* Mobile Hamburger Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-md text-slate-300 hover:text-white hover:bg-legal-800/60 focus:outline-none"
-                aria-label="Toggle Navigation Menu"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
+            {/* Mobile Hamburger Morph */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden w-10 h-10 rounded-full bg-legal-900/80 border border-white/10 flex flex-col items-center justify-center space-y-1.5 focus:outline-none"
+              aria-label="Toggle navigation menu"
+            >
+              <span
+                className={`w-5 h-0.5 bg-slate-200 rounded-full transition-all duration-300 ease-spring ${
+                  mobileMenuOpen ? 'rotate-45 translate-y-2 bg-gold-300' : ''
+                }`}
+              />
+              <span
+                className={`w-5 h-0.5 bg-slate-200 rounded-full transition-all duration-300 ease-spring ${
+                  mobileMenuOpen ? 'opacity-0' : ''
+                }`}
+              />
+              <span
+                className={`w-5 h-0.5 bg-slate-200 rounded-full transition-all duration-300 ease-spring ${
+                  mobileMenuOpen ? '-rotate-45 -translate-y-2 bg-gold-300' : ''
+                }`}
+              />
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Staggered Glass Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-x-0 top-[70px] z-40 bg-legal-950/98 border-b border-legal-800 p-6 md:hidden backdrop-blur-xl shadow-2xl"
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(24px)' }}
+            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-40 bg-black/90 pt-24 px-6 md:hidden flex flex-col justify-between pb-10"
           >
-            <div className="flex flex-col space-y-3">
-              {NAV_ITEMS.map((item) => (
-                <Link
+            <div className="flex flex-col space-y-3 pt-6">
+              {NAV_ITEMS.map((item, idx) => (
+                <motion.div
                   key={item.label}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-lg text-sm font-semibold tracking-wider uppercase transition-colors ${
-                    pathname === item.href
-                      ? 'bg-legal-800/80 text-gold-300 border-l-4 border-gold-400'
-                      : 'text-slate-200 hover:bg-legal-900 hover:text-white'
-                  }`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * idx, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  {item.label}
-                </Link>
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-5 py-3 rounded-xl text-base font-serif font-bold tracking-wider uppercase transition-all ${
+                      pathname === item.href
+                        ? 'bg-gold-500/15 text-gold-300 border border-gold-500/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </motion.div>
               ))}
-              <div className="pt-4 border-t border-legal-800">
-                <Link
-                  href="/#contact"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center py-3 rounded-md text-sm font-semibold uppercase tracking-wider text-legal-950 bg-gradient-to-r from-gold-400 to-gold-300 shadow-md"
-                >
-                  <span>Connect With SIL</span>
-                  <ArrowUpRight className="ml-2 w-4 h-4" />
-                </Link>
-              </div>
+            </div>
+
+            <div className="pt-6 border-t border-white/10">
+              <Link
+                href="/#contact"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center py-3.5 rounded-full text-xs font-semibold uppercase tracking-wider text-legal-950 bg-gradient-to-r from-gold-300 to-gold-400 shadow-xl"
+              >
+                <span>Connect With SIL Secretariat</span>
+                <ArrowUpRight className="ml-2 w-4 h-4" />
+              </Link>
             </div>
           </motion.div>
         )}
