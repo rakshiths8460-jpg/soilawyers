@@ -7,17 +7,17 @@ import { motion } from 'framer-motion';
 import {
   Scale,
   Shield,
-  BookOpen,
-  Users,
   ArrowRight,
   ArrowUpRight,
   Calendar,
   ChevronRight,
-  CheckCircle2
+  MapPin,
+  Users,
+  BookOpen
 } from 'lucide-react';
 import ContactSection from '@/components/ContactSection';
 import GsapHeroEffects from '@/components/GsapHeroEffects';
-import { SIL_ABOUT_DATA, SIL_EVENTS, SIL_BLOGS } from '@/data/siteData';
+import { SIL_ABOUT_DATA, SIL_EVENTS } from '@/data/siteData';
 
 export default function HomePage() {
   return (
