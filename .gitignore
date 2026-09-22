@@ -37,3 +37,4 @@ _scraped_data/
 scripts_cache/
 downloaded_images/
 *.py
+data/local_event_store.json
