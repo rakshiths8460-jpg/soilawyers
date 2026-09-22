@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, Inter } from 'next/font/google';
+import { Cormorant_Garamond, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -7,13 +7,17 @@ import CookieConsent from '@/components/CookieConsent';
 
 const serifFont = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-playfair',
+  weight: ['300', '400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
+  display: 'swap',
 });
 
-const sansFont = Inter({
+const sansFont = Plus_Jakarta_Sans({
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -69,9 +73,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-IN" className={`${serifFont.variable} ${sansFont.variable} scroll-smooth`}>
-      <body className="bg-legal-950 text-slate-100 flex flex-col min-h-screen">
+      <body className="bg-institutional-950 text-slate-100 flex flex-col min-h-screen antialiased selection:bg-bronze-400 selection:text-institutional-950">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-[100] px-4 py-2 bg-bronze-400 text-institutional-950 font-semibold text-xs rounded uppercase tracking-wider"
+        >
+          Skip to main content
+        </a>
         <Navbar />
-        <main className="flex-grow pt-20">
+        <main id="main-content" className="flex-grow pt-16 sm:pt-20">
           {children}
         </main>
         <Footer />
