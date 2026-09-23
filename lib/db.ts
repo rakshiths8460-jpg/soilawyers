@@ -24,7 +24,7 @@ export interface AttendeeRecord {
   designation?: string;
   category?: string;
   amount_paid: number;
-  payment_status: 'free' | 'paid' | 'pending';
+  payment_status: 'free' | 'paid' | 'pending' | 'failed';
   razorpay_order_id?: string;
   razorpay_payment_id?: string;
   created_at: string;
@@ -303,6 +303,105 @@ export async function createAttendeeRegistration(
   store.attendees.unshift(record);
   saveLocalStore(store);
   return record;
+}
+
+export async function getAttendeeByTicketId(ticket_id: string): Promise<AttendeeRecord | null> {
+  const sql = await getNeonClient();
+  if (sql) {
+    try {
+      const rows = await sql`
+        SELECT * FROM event_registrations WHERE ticket_id = ${ticket_id} LIMIT 1;
+      `;
+      if (rows && rows.length > 0) return rows[0] as unknown as AttendeeRecord;
+    } catch (e) {
+      console.error('Neon getAttendeeByTicketId error:', e);
+    }
+  }
+
+  const store = getLocalStore();
+  const found = (store.attendees || []).find((a: AttendeeRecord) => a.ticket_id === ticket_id);
+  return found || null;
+}
+
+export async function getAttendeeByOrderId(order_id: string): Promise<AttendeeRecord | null> {
+  const sql = await getNeonClient();
+  if (sql) {
+    try {
+      const rows = await sql`
+        SELECT * FROM event_registrations WHERE razorpay_order_id = ${order_id} LIMIT 1;
+      `;
+      if (rows && rows.length > 0) return rows[0] as unknown as AttendeeRecord;
+    } catch (e) {
+      console.error('Neon getAttendeeByOrderId error:', e);
+    }
+  }
+
+  const store = getLocalStore();
+  const found = (store.attendees || []).find((a: AttendeeRecord) => a.razorpay_order_id === order_id);
+  return found || null;
+}
+
+export async function updateAttendeePayment(
+  identifier: { ticket_id?: string; order_id?: string },
+  updates: {
+    payment_status: 'free' | 'paid' | 'pending' | 'failed';
+    razorpay_payment_id?: string;
+    razorpay_order_id?: string;
+    amount_paid?: number;
+  }
+): Promise<AttendeeRecord | null> {
+  const sql = await getNeonClient();
+  if (sql) {
+    try {
+      let rows;
+      if (identifier.ticket_id) {
+        rows = await sql`
+          UPDATE event_registrations
+          SET payment_status = ${updates.payment_status},
+              razorpay_payment_id = COALESCE(${updates.razorpay_payment_id || null}, razorpay_payment_id),
+              razorpay_order_id = COALESCE(${updates.razorpay_order_id || null}, razorpay_order_id),
+              amount_paid = COALESCE(${updates.amount_paid !== undefined ? updates.amount_paid : null}, amount_paid)
+          WHERE ticket_id = ${identifier.ticket_id}
+          RETURNING *;
+        `;
+      } else if (identifier.order_id) {
+        rows = await sql`
+          UPDATE event_registrations
+          SET payment_status = ${updates.payment_status},
+              razorpay_payment_id = COALESCE(${updates.razorpay_payment_id || null}, razorpay_payment_id),
+              razorpay_order_id = COALESCE(${updates.razorpay_order_id || null}, razorpay_order_id),
+              amount_paid = COALESCE(${updates.amount_paid !== undefined ? updates.amount_paid : null}, amount_paid)
+          WHERE razorpay_order_id = ${identifier.order_id}
+          RETURNING *;
+        `;
+      }
+      if (rows && rows.length > 0) return rows[0] as unknown as AttendeeRecord;
+    } catch (e) {
+      console.error('Neon updateAttendeePayment error:', e);
+    }
+  }
+
+  // Local fallback
+  const store = getLocalStore();
+  store.attendees = store.attendees || [];
+  const idx = store.attendees.findIndex((a: AttendeeRecord) =>
+    (identifier.ticket_id && a.ticket_id === identifier.ticket_id) ||
+    (identifier.order_id && a.razorpay_order_id === identifier.order_id)
+  );
+
+  if (idx !== -1) {
+    store.attendees[idx] = {
+      ...store.attendees[idx],
+      payment_status: updates.payment_status,
+      razorpay_payment_id: updates.razorpay_payment_id || store.attendees[idx].razorpay_payment_id,
+      razorpay_order_id: updates.razorpay_order_id || store.attendees[idx].razorpay_order_id,
+      amount_paid: updates.amount_paid !== undefined ? updates.amount_paid : store.attendees[idx].amount_paid,
+    };
+    saveLocalStore(store);
+    return store.attendees[idx];
+  }
+
+  return null;
 }
 
 export async function getAllAttendees(slug?: string, search?: string): Promise<AttendeeRecord[]> {

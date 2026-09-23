@@ -130,6 +130,21 @@ export default function IbcEventPage() {
       .catch((err) => console.error('Error fetching event config:', err));
   }, []);
 
+  // Dynamic Razorpay checkout script loader
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') return resolve(false);
+      if ((window as any).Razorpay) return resolve(true);
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
@@ -150,14 +165,111 @@ export default function IbcEventPage() {
       });
 
       const data = await res.json();
-      if (data.success) {
-        setRegisteredAttendee(data.attendee);
-      } else {
+      if (!data.success) {
         setErrorMsg(data.error || 'Registration could not be completed.');
+        setLoading(false);
+        return;
       }
+
+      // If complimentary / free event
+      if (!data.requiresPayment) {
+        setRegisteredAttendee(data.attendee);
+        setLoading(false);
+        return;
+      }
+
+      // Paid event: Handle Mock Mode (when API keys are not configured in environment)
+      if (data.isMock) {
+        // Automatically verify in development mock mode
+        const verifyRes = await fetch('/api/events/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_id: data.ticket_id,
+            isMock: true,
+            razorpay_order_id: data.orderId,
+            razorpay_payment_id: `pay_mock_${Date.now()}`,
+          }),
+        });
+        const verifyData = await verifyRes.json();
+        if (verifyData.success) {
+          setRegisteredAttendee(verifyData.attendee);
+        } else {
+          setErrorMsg(verifyData.error || 'Verification failed.');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Live Razorpay Checkout
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        setErrorMsg('Unable to reach Razorpay gateway. Please check your internet connection.');
+        setLoading(false);
+        return;
+      }
+
+      const options = {
+        key: data.key,
+        amount: data.amount,
+        currency: data.currency || 'INR',
+        name: 'Society of Indian Lawyers',
+        description: `IBC Turns 10: ${form.category}`,
+        image: '/images/logo_sil.png',
+        order_id: data.orderId,
+        prefill: {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          contact: form.phone.trim(),
+        },
+        notes: {
+          ticket_id: data.ticket_id,
+          category: form.category,
+        },
+        theme: {
+          color: '#c5a880',
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+            setErrorMsg('Payment cancelled. Your seat reservation is pending payment confirmation.');
+          },
+        },
+        handler: async function (response: any) {
+          try {
+            setLoading(true);
+            const verifyRes = await fetch('/api/events/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ticket_id: data.ticket_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              setRegisteredAttendee(verifyData.attendee);
+            } else {
+              setErrorMsg(verifyData.error || 'Payment signature verification failed. Please contact Secretariat.');
+            }
+          } catch (err: any) {
+            setErrorMsg('Verification request error. If your payment was deducted, our webhook will confirm your seat.');
+          } finally {
+            setLoading(false);
+          }
+        },
+      };
+
+      const rzpInstance = new (window as any).Razorpay(options);
+      rzpInstance.on('payment.failed', function (failResp: any) {
+        setErrorMsg(`Payment failed: ${failResp.error?.description || 'Transaction declined.'}`);
+        setLoading(false);
+      });
+      rzpInstance.open();
     } catch (err: any) {
       setErrorMsg('Network error. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -485,6 +597,12 @@ export default function IbcEventPage() {
                     <span className="text-[#8e8778]">Registration Fee:</span>
                     <span className="font-mono font-bold text-[#c5a880]">₹{(registeredAttendee.amount_paid || 0).toLocaleString('en-IN')}</span>
                   </div>
+                  {registeredAttendee.razorpay_payment_id && (
+                    <div className="flex justify-between text-xs border-b border-[#c5a880]/20 pb-2">
+                      <span className="text-[#8e8778]">Payment Ref ID:</span>
+                      <span className="font-mono text-emerald-400 truncate max-w-[200px]">{registeredAttendee.razorpay_payment_id}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-xs">
                     <span className="text-[#8e8778]">Status:</span>
                     <span className="text-emerald-400 font-semibold uppercase">{registeredAttendee.payment_status}</span>

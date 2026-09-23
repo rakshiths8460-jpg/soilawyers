@@ -45,6 +45,7 @@ export default function AdminDashboardPage() {
   const [editCapacity, setEditCapacity] = useState<number>(200);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending' | 'free'>('all');
 
   // Check saved session
   useEffect(() => {
@@ -427,71 +428,148 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
+            {/* Status Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                  statusFilter === 'all'
+                    ? 'bg-gold-400 text-legal-950 font-bold'
+                    : 'bg-white/5 text-slate-400 hover:text-white'
+                }`}
+              >
+                All ({attendees.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('paid')}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                  statusFilter === 'paid'
+                    ? 'bg-emerald-500 text-white font-bold'
+                    : 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
+                }`}
+              >
+                Paid ({attendees.filter((a) => a.payment_status === 'paid').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('pending')}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                  statusFilter === 'pending'
+                    ? 'bg-amber-500 text-legal-950 font-bold'
+                    : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                }`}
+              >
+                Pending ({attendees.filter((a) => a.payment_status === 'pending').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('free')}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                  statusFilter === 'free'
+                    ? 'bg-blue-500 text-white font-bold'
+                    : 'bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'
+                }`}
+              >
+                Complimentary ({attendees.filter((a) => a.payment_status === 'free').length})
+              </button>
+            </div>
+
             {/* Attendees Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="border-b border-white/10 text-[10px] uppercase tracking-wider text-slate-400">
                   <tr>
                     <th className="py-3 px-3">Ticket ID</th>
-                    <th className="py-3 px-3">Name</th>
-                    <th className="py-3 px-3">Email</th>
-                    <th className="py-3 px-3">Phone</th>
+                    <th className="py-3 px-3">Delegate</th>
+                    <th className="py-3 px-3">Contact</th>
                     <th className="py-3 px-3">Category</th>
                     <th className="py-3 px-3">Fee Paid</th>
-                    <th className="py-3 px-3">Organization</th>
-                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3">Razorpay Ref</th>
+                    <th className="py-3 px-3">Payment Status</th>
                     <th className="py-3 px-3">Registered On</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {attendees.length === 0 ? (
+                  {attendees.filter((a) => statusFilter === 'all' || a.payment_status === statusFilter).length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-500">
-                        No registrations recorded yet. Attendees who sign up via the event page will appear here.
+                      <td colSpan={8} className="py-8 text-center text-slate-500">
+                        No registrations found for this filter.
                       </td>
                     </tr>
                   ) : (
-                    attendees.map((att) => (
-                      <tr key={att.ticket_id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="py-3 px-3 font-mono text-gold-300 font-bold">{att.ticket_id}</td>
-                        <td className="py-3 px-3 font-medium text-white">{att.name}</td>
-                        <td className="py-3 px-3">{att.email}</td>
-                        <td className="py-3 px-3 font-mono">{att.phone}</td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] ${
-                              (att.category || '').toLowerCase().includes('student')
-                                ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-                                : 'bg-white/5 border border-white/10 text-slate-300'
-                            }`}
-                          >
-                            {att.category || 'General'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 font-mono font-semibold text-white">
-                          ₹{(att.amount_paid || 0).toLocaleString('en-IN')}
-                        </td>
-                        <td className="py-3 px-3 truncate max-w-[150px]">{att.organization || '—'}</td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold ${
-                              att.payment_status === 'paid'
-                                ? 'bg-emerald-500/20 text-emerald-400'
-                                : 'bg-blue-500/20 text-blue-300'
-                            }`}
-                          >
-                            {att.payment_status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-slate-500 text-[11px]">
-                          {new Date(att.created_at).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </td>
-                      </tr>
-                    ))
+                    attendees
+                      .filter((a) => statusFilter === 'all' || a.payment_status === statusFilter)
+                      .map((att) => (
+                        <tr key={att.ticket_id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3 px-3 font-mono text-gold-300 font-bold">{att.ticket_id}</td>
+                          <td className="py-3 px-3">
+                            <span className="font-medium text-white block">{att.name}</span>
+                            <span className="text-[10px] text-slate-400 truncate max-w-[140px] block">{att.organization || '—'}</span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="text-white block">{att.email}</span>
+                            <span className="font-mono text-slate-400 text-[10px]">{att.phone}</span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] ${
+                                (att.category || '').toLowerCase().includes('student')
+                                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                                  : 'bg-white/5 border border-white/10 text-slate-300'
+                              }`}
+                            >
+                              {att.category || 'General'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 font-mono font-semibold text-white">
+                            ₹{(att.amount_paid || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-3 px-3 font-mono text-[10px]">
+                            {att.razorpay_payment_id ? (
+                              <div>
+                                <span className="text-emerald-400 block truncate max-w-[140px]" title={att.razorpay_payment_id}>
+                                  Pay: {att.razorpay_payment_id}
+                                </span>
+                                {att.razorpay_order_id && (
+                                  <span className="text-slate-500 block truncate max-w-[140px]" title={att.razorpay_order_id}>
+                                    Ord: {att.razorpay_order_id}
+                                  </span>
+                                )}
+                              </div>
+                            ) : att.razorpay_order_id ? (
+                              <span className="text-slate-500 truncate max-w-[140px] block" title={att.razorpay_order_id}>
+                                Ord: {att.razorpay_order_id}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold border ${
+                                att.payment_status === 'paid'
+                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                  : att.payment_status === 'pending'
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                  : att.payment_status === 'failed'
+                                  ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                                  : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                              }`}
+                            >
+                              {att.payment_status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-slate-500 text-[11px] whitespace-nowrap">
+                            {new Date(att.created_at).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </td>
+                        </tr>
+                      ))
                   )}
                 </tbody>
               </table>
