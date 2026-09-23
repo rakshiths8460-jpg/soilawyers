@@ -14,7 +14,8 @@ import {
   Database,
   ArrowUpRight,
   RefreshCw,
-  Tag
+  Tag,
+  MessageSquare
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -213,6 +214,25 @@ export default function AdminDashboardPage() {
               Sign Out
             </button>
           </div>
+        </div>
+
+        {/* SECTION NAVIGATION TABS */}
+        <div className="flex items-center space-x-2 border-b border-white/10 pb-2">
+          <Link
+            href="/admin"
+            className="px-4 py-2 rounded text-xs font-sans font-semibold uppercase tracking-wider bg-bronze-400 text-institutional-950 font-bold transition-colors flex items-center space-x-2 shadow"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Event Registrations & Pricing</span>
+          </Link>
+
+          <Link
+            href="/admin/inquiries"
+            className="px-4 py-2 rounded text-xs font-sans font-semibold uppercase tracking-wider text-slate-400 hover:text-white hover:bg-white/5 transition-colors flex items-center space-x-2"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Contact Inquiries & Questions</span>
+          </Link>
         </div>
 
         {/* Analytics Stat Cards */}

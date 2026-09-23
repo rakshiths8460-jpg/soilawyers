@@ -8,27 +8,49 @@ export default function ContactSection() {
   const [formState, setFormState] = useState({
     name: '',
     email: '',
+    phone: '',
     subject: '',
     message: '',
     optIn: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedInquiryId, setSubmittedInquiryId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formState.name.trim() || !formState.email.trim()) {
       setErrorMsg('Please provide your name and official email address.');
       return;
     }
+    if (!formState.message.trim()) {
+      setErrorMsg('Please write your message or question.');
+      return;
+    }
+
     setErrorMsg('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formState),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to transmit communication.');
+      }
+
+      setSubmittedInquiryId(data.inquiry_id || '');
       setIsSubmitted(true);
-    }, 750);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -116,7 +138,7 @@ export default function ContactSection() {
                   <span>Protocol of Communication</span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  Every official communication is logged and acknowledged within 48 hours by the Secretariat Committee.
+                  Every official communication is logged in the Secretariat Registry and acknowledged within 48 hours.
                 </p>
               </div>
             </div>
@@ -133,14 +155,20 @@ export default function ContactSection() {
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <h4 className="font-serif text-2xl font-bold text-white">Inquiry Registered</h4>
+                  {submittedInquiryId && (
+                    <div className="inline-block px-3 py-1 rounded bg-white/5 border border-bronze-400/30 text-xs font-mono text-bronze-300">
+                      Tracking ID: {submittedInquiryId}
+                    </div>
+                  )}
                   <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto leading-relaxed font-sans">
-                    Thank you for contacting the Society of Indian Lawyers. Your transmission has been queued for review by the secretarial committee.
+                    Thank you for contacting the Society of Indian Lawyers. Your question has been recorded in the central secretariat registry.
                   </p>
                   <div className="pt-3">
                     <button
                       onClick={() => {
                         setIsSubmitted(false);
-                        setFormState({ name: '', email: '', subject: '', message: '', optIn: true });
+                        setSubmittedInquiryId('');
+                        setFormState({ name: '', email: '', phone: '', subject: '', message: '', optIn: true });
                       }}
                       className="inline-flex items-center px-4 py-2 rounded text-xs font-sans font-semibold uppercase tracking-wider bg-white/10 text-slate-200 hover:text-white hover:bg-white/15 transition-colors"
                     >
@@ -187,29 +215,44 @@ export default function ContactSection() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Subject / Matter
-                    </label>
-                    <input
-                      type="text"
-                      value={formState.subject}
-                      onChange={(e) => setFormState({ ...formState, subject: e.target.value })}
-                      placeholder="Membership / Academic Conclave / Research Collaboration / General Inquiries"
-                      className="w-full bg-institutional-900/80 border border-white/10 rounded px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-bronze-400 transition-colors"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Phone / Contact Number (Optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={formState.phone}
+                        onChange={(e) => setFormState({ ...formState, phone: e.target.value })}
+                        placeholder="+91 98765 43210"
+                        className="w-full bg-institutional-900/80 border border-white/10 rounded px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-bronze-400 transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Subject / Matter
+                      </label>
+                      <input
+                        type="text"
+                        value={formState.subject}
+                        onChange={(e) => setFormState({ ...formState, subject: e.target.value })}
+                        placeholder="Membership / Academic / General"
+                        className="w-full bg-institutional-900/80 border border-white/10 rounded px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-bronze-400 transition-colors"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Message / Proposal <span className="text-bronze-400">*</span>
+                      Question / Message <span className="text-bronze-400">*</span>
                     </label>
                     <textarea
                       rows={4}
                       required
                       value={formState.message}
                       onChange={(e) => setFormState({ ...formState, message: e.target.value })}
-                      placeholder="Please elaborate on your inquiry or representation..."
+                      placeholder="Please elaborate on your question, proposal, or inquiry..."
                       className="w-full bg-institutional-900/80 border border-white/10 rounded p-3.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-bronze-400 transition-colors resize-none"
                     />
                   </div>
@@ -237,7 +280,7 @@ export default function ContactSection() {
                         <span>Transmitting to Secretariat...</span>
                       ) : (
                         <>
-                          <span>Transmit Communication</span>
+                          <span>Transmit Question / Inquiry</span>
                           <Send className="w-3.5 h-3.5 ml-2" />
                         </>
                       )}

@@ -29,6 +29,19 @@ export interface AttendeeRecord {
   created_at: string;
 }
 
+export interface ContactInquiry {
+  id?: number | string;
+  inquiry_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject?: string;
+  message: string;
+  opt_in: boolean;
+  status: 'unread' | 'read' | 'resolved';
+  created_at: string;
+}
+
 const LOCAL_STORE_PATH = path.join(process.cwd(), 'data', 'local_event_store.json');
 
 function getLocalStore() {
@@ -45,14 +58,18 @@ function getLocalStore() {
             updated_at: new Date().toISOString()
           }
         },
-        attendees: [] as AttendeeRecord[]
+        attendees: [] as AttendeeRecord[],
+        inquiries: [] as ContactInquiry[]
       };
       fs.mkdirSync(path.dirname(LOCAL_STORE_PATH), { recursive: true });
       fs.writeFileSync(LOCAL_STORE_PATH, JSON.stringify(initial, null, 2), 'utf-8');
       return initial;
     }
     const data = fs.readFileSync(LOCAL_STORE_PATH, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    parsed.inquiries = parsed.inquiries || [];
+    parsed.attendees = parsed.attendees || [];
+    return parsed;
   } catch (err) {
     return {
       config: {
@@ -65,7 +82,8 @@ function getLocalStore() {
           updated_at: new Date().toISOString()
         }
       },
-      attendees: [] as AttendeeRecord[]
+      attendees: [] as AttendeeRecord[],
+      inquiries: [] as ContactInquiry[]
     };
   }
 }
@@ -116,6 +134,20 @@ async function getNeonClient() {
         payment_status VARCHAR(50) NOT NULL DEFAULT 'free',
         razorpay_order_id VARCHAR(100),
         razorpay_payment_id VARCHAR(100),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS contact_inquiries (
+        id SERIAL PRIMARY KEY,
+        inquiry_id VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        subject VARCHAR(255),
+        message TEXT NOT NULL,
+        opt_in BOOLEAN NOT NULL DEFAULT true,
+        status VARCHAR(50) NOT NULL DEFAULT 'unread',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `;
@@ -289,4 +321,145 @@ export async function getAllAttendees(slug?: string, search?: string): Promise<A
     );
   }
   return list;
+}
+
+export async function createContactInquiry(
+  data: Omit<ContactInquiry, 'id' | 'created_at' | 'inquiry_id' | 'status'>
+): Promise<ContactInquiry> {
+  const inquiry_id = `INQ-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+  const created_at = new Date().toISOString();
+  const record: ContactInquiry = {
+    ...data,
+    inquiry_id,
+    status: 'unread',
+    created_at
+  };
+
+  const sql = await getNeonClient();
+  if (sql) {
+    try {
+      const rows = await sql`
+        INSERT INTO contact_inquiries (
+          inquiry_id, name, email, phone, subject, message, opt_in, status
+        ) VALUES (
+          ${record.inquiry_id}, ${record.name}, ${record.email}, ${record.phone || ''},
+          ${record.subject || ''}, ${record.message}, ${record.opt_in}, 'unread'
+        )
+        RETURNING *;
+      `;
+      if (rows.length > 0) return rows[0] as unknown as ContactInquiry;
+    } catch (e) {
+      console.error('Neon insert inquiry error:', e);
+    }
+  }
+
+  // Local fallback
+  const store = getLocalStore();
+  store.inquiries = store.inquiries || [];
+  store.inquiries.unshift(record);
+  saveLocalStore(store);
+  return record;
+}
+
+export async function getAllContactInquiries(search?: string, status?: string): Promise<ContactInquiry[]> {
+  const sql = await getNeonClient();
+  if (sql) {
+    try {
+      let rows;
+      if (status && status !== 'all') {
+        rows = await sql`
+          SELECT * FROM contact_inquiries WHERE status = ${status} ORDER BY created_at DESC;
+        `;
+      } else {
+        rows = await sql`
+          SELECT * FROM contact_inquiries ORDER BY created_at DESC;
+        `;
+      }
+      let list = rows as unknown as ContactInquiry[];
+      if (search) {
+        const q = search.toLowerCase();
+        list = list.filter(
+          (inq) =>
+            inq.name.toLowerCase().includes(q) ||
+            inq.email.toLowerCase().includes(q) ||
+            (inq.phone && inq.phone.includes(q)) ||
+            (inq.subject && inq.subject.toLowerCase().includes(q)) ||
+            inq.message.toLowerCase().includes(q) ||
+            inq.inquiry_id.toLowerCase().includes(q)
+        );
+      }
+      return list;
+    } catch (e) {
+      console.error('Neon get inquiries error:', e);
+    }
+  }
+
+  // Local fallback
+  const store = getLocalStore();
+  let list: ContactInquiry[] = store.inquiries || [];
+  if (status && status !== 'all') {
+    list = list.filter((i) => i.status === status);
+  }
+  if (search) {
+    const q = search.toLowerCase();
+    list = list.filter(
+      (inq) =>
+        inq.name.toLowerCase().includes(q) ||
+        inq.email.toLowerCase().includes(q) ||
+        (inq.phone && inq.phone.includes(q)) ||
+        (inq.subject && inq.subject.toLowerCase().includes(q)) ||
+        inq.message.toLowerCase().includes(q) ||
+        inq.inquiry_id.toLowerCase().includes(q)
+    );
+  }
+  return list;
+}
+
+export async function updateContactInquiryStatus(
+  inquiry_id: string,
+  status: 'unread' | 'read' | 'resolved'
+): Promise<boolean> {
+  const sql = await getNeonClient();
+  if (sql) {
+    try {
+      await sql`
+        UPDATE contact_inquiries SET status = ${status} WHERE inquiry_id = ${inquiry_id};
+      `;
+      return true;
+    } catch (e) {
+      console.error('Neon update inquiry status error:', e);
+    }
+  }
+
+  // Local fallback
+  const store = getLocalStore();
+  store.inquiries = store.inquiries || [];
+  const idx = store.inquiries.findIndex((i: ContactInquiry) => i.inquiry_id === inquiry_id);
+  if (idx !== -1) {
+    store.inquiries[idx].status = status;
+    saveLocalStore(store);
+    return true;
+  }
+  return false;
+}
+
+export async function deleteContactInquiry(inquiry_id: string): Promise<boolean> {
+  const sql = await getNeonClient();
+  if (sql) {
+    try {
+      await sql`
+        DELETE FROM contact_inquiries WHERE inquiry_id = ${inquiry_id};
+      `;
+      return true;
+    } catch (e) {
+      console.error('Neon delete inquiry error:', e);
+    }
+  }
+
+  // Local fallback
+  const store = getLocalStore();
+  store.inquiries = store.inquiries || [];
+  store.inquiries = store.inquiries.filter((i: ContactInquiry) => i.inquiry_id !== inquiry_id);
+  saveLocalStore(store);
+  return true;
 }
