@@ -21,6 +21,7 @@ export async function GET(request: Request) {
         seatsRemaining,
         maxCapacity: config.max_capacity,
         priceInr: config.price_inr,
+        studentPriceInr: config.student_price_inr ?? 1000,
         isOpen: config.is_registration_open,
         isNeon: isNeonConfigured(),
       },

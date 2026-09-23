@@ -24,7 +24,11 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    const price = config.price_inr || 0;
+    const userCategory = (category || 'General Delegate').trim();
+    const isStudent = userCategory.toLowerCase().includes('student');
+    const price = isStudent
+      ? (config.student_price_inr !== undefined && config.student_price_inr !== null ? config.student_price_inr : 1000)
+      : (config.price_inr !== undefined && config.price_inr !== null ? config.price_inr : 2000);
     const payment_status = price === 0 ? 'free' : 'pending';
 
     const attendee = await createAttendeeRegistration({
@@ -34,7 +38,7 @@ export async function POST(request: Request) {
       phone: phone.trim(),
       organization: organization ? organization.trim() : '',
       designation: designation ? designation.trim() : '',
-      category: category || 'General Delegate',
+      category: userCategory,
       amount_paid: price,
       payment_status,
     });

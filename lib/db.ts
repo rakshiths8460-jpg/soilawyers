@@ -7,6 +7,7 @@ export interface EventConfig {
   event_slug: string;
   title: string;
   price_inr: number;
+  student_price_inr: number;
   is_registration_open: boolean;
   max_capacity: number;
   updated_at?: string;
@@ -52,7 +53,8 @@ function getLocalStore() {
           'ibc-turns-10': {
             event_slug: 'ibc-turns-10',
             title: 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code',
-            price_inr: 0,
+            price_inr: 2000,
+            student_price_inr: 1000,
             is_registration_open: true,
             max_capacity: 200,
             updated_at: new Date().toISOString()
@@ -69,6 +71,14 @@ function getLocalStore() {
     const parsed = JSON.parse(data);
     parsed.inquiries = parsed.inquiries || [];
     parsed.attendees = parsed.attendees || [];
+    if (parsed.config && parsed.config['ibc-turns-10']) {
+      if (parsed.config['ibc-turns-10'].student_price_inr === undefined) {
+        parsed.config['ibc-turns-10'].student_price_inr = 1000;
+      }
+      if (parsed.config['ibc-turns-10'].price_inr === 0 || parsed.config['ibc-turns-10'].price_inr === undefined) {
+        parsed.config['ibc-turns-10'].price_inr = 2000;
+      }
+    }
     return parsed;
   } catch (err) {
     return {
@@ -76,7 +86,8 @@ function getLocalStore() {
         'ibc-turns-10': {
           event_slug: 'ibc-turns-10',
           title: 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code',
-          price_inr: 0,
+          price_inr: 2000,
+          student_price_inr: 1000,
           is_registration_open: true,
           max_capacity: 200,
           updated_at: new Date().toISOString()
@@ -113,11 +124,15 @@ async function getNeonClient() {
         id SERIAL PRIMARY KEY,
         event_slug VARCHAR(100) UNIQUE NOT NULL,
         title VARCHAR(255) NOT NULL,
-        price_inr INTEGER NOT NULL DEFAULT 0,
+        price_inr INTEGER NOT NULL DEFAULT 2000,
+        student_price_inr INTEGER NOT NULL DEFAULT 1000,
         is_registration_open BOOLEAN NOT NULL DEFAULT true,
         max_capacity INTEGER NOT NULL DEFAULT 200,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+    `;
+    await sql`
+      ALTER TABLE event_settings ADD COLUMN IF NOT EXISTS student_price_inr INTEGER NOT NULL DEFAULT 1000;
     `;
     await sql`
       CREATE TABLE IF NOT EXISTS event_registrations (
@@ -166,15 +181,25 @@ export async function getEventConfig(slug: string = 'ibc-turns-10'): Promise<Eve
         SELECT * FROM event_settings WHERE event_slug = ${slug} LIMIT 1;
       `;
       if (rows && rows.length > 0) {
-        return rows[0] as unknown as EventConfig;
+        const item = rows[0] as unknown as EventConfig;
+        return {
+          ...item,
+          price_inr: item.price_inr !== undefined && item.price_inr !== null ? Number(item.price_inr) : 2000,
+          student_price_inr: item.student_price_inr !== undefined && item.student_price_inr !== null ? Number(item.student_price_inr) : 1000,
+        };
       }
       // Insert default if not exists
       const inserted = await sql`
-        INSERT INTO event_settings (event_slug, title, price_inr, is_registration_open, max_capacity)
-        VALUES (${slug}, 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code', 0, true, 200)
+        INSERT INTO event_settings (event_slug, title, price_inr, student_price_inr, is_registration_open, max_capacity)
+        VALUES (${slug}, 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code', 2000, 1000, true, 200)
         RETURNING *;
       `;
-      return inserted[0] as unknown as EventConfig;
+      const newItem = inserted[0] as unknown as EventConfig;
+      return {
+        ...newItem,
+        price_inr: newItem.price_inr !== undefined && newItem.price_inr !== null ? Number(newItem.price_inr) : 2000,
+        student_price_inr: newItem.student_price_inr !== undefined && newItem.student_price_inr !== null ? Number(newItem.student_price_inr) : 1000,
+      };
     } catch (e) {
       console.error('Neon query error in getEventConfig:', e);
     }
@@ -186,31 +211,40 @@ export async function getEventConfig(slug: string = 'ibc-turns-10'): Promise<Eve
     store.config[slug] = {
       event_slug: slug,
       title: 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code',
-      price_inr: 0,
+      price_inr: 2000,
+      student_price_inr: 1000,
       is_registration_open: true,
       max_capacity: 200,
       updated_at: new Date().toISOString()
     };
     saveLocalStore(store);
+  } else {
+    if (store.config[slug].student_price_inr === undefined) {
+      store.config[slug].student_price_inr = 1000;
+    }
+    if (store.config[slug].price_inr === 0 || store.config[slug].price_inr === undefined) {
+      store.config[slug].price_inr = 2000;
+    }
   }
   return store.config[slug];
 }
 
 export async function updateEventConfig(
   slug: string,
-  updates: { price_inr?: number; is_registration_open?: boolean; max_capacity?: number }
+  updates: { price_inr?: number; student_price_inr?: number; is_registration_open?: boolean; max_capacity?: number }
 ): Promise<EventConfig> {
   const sql = await getNeonClient();
   if (sql) {
     try {
       const current = await getEventConfig(slug);
       const newPrice = updates.price_inr !== undefined ? updates.price_inr : current.price_inr;
+      const newStudentPrice = updates.student_price_inr !== undefined ? updates.student_price_inr : (current.student_price_inr ?? 1000);
       const newOpen = updates.is_registration_open !== undefined ? updates.is_registration_open : current.is_registration_open;
       const newCap = updates.max_capacity !== undefined ? updates.max_capacity : current.max_capacity;
 
       const rows = await sql`
         UPDATE event_settings
-        SET price_inr = ${newPrice}, is_registration_open = ${newOpen}, max_capacity = ${newCap}, updated_at = CURRENT_TIMESTAMP
+        SET price_inr = ${newPrice}, student_price_inr = ${newStudentPrice}, is_registration_open = ${newOpen}, max_capacity = ${newCap}, updated_at = CURRENT_TIMESTAMP
         WHERE event_slug = ${slug}
         RETURNING *;
       `;

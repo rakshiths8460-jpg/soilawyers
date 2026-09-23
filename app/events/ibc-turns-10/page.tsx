@@ -90,10 +90,12 @@ const SESSIONS = [
 export default function IbcEventPage() {
   const [eventSettings, setEventSettings] = useState<{
     price_inr: number;
+    student_price_inr: number;
     is_registration_open: boolean;
     max_capacity: number;
   }>({
-    price_inr: 0,
+    price_inr: 2000,
+    student_price_inr: 1000,
     is_registration_open: true,
     max_capacity: 200,
   });
@@ -110,6 +112,11 @@ export default function IbcEventPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [registeredAttendee, setRegisteredAttendee] = useState<any>(null);
+
+  const isStudentCategory = (form.category || '').toLowerCase().includes('student');
+  const professionalFee = eventSettings.price_inr !== undefined ? eventSettings.price_inr : 2000;
+  const studentFee = eventSettings.student_price_inr !== undefined ? eventSettings.student_price_inr : 1000;
+  const activeFee = isStudentCategory ? studentFee : professionalFee;
 
   // Fetch dynamic price and status
   useEffect(() => {
@@ -194,7 +201,7 @@ export default function IbcEventPage() {
               href="#register"
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#c5a880] text-[#0a1c15] hover:bg-[#dfcfb3] transition-all shadow-xl font-sans"
             >
-              <span>{eventSettings.price_inr > 0 ? `Register Now · ₹${eventSettings.price_inr}` : 'Register as Delegate (Free)'}</span>
+              <span>{`Register Now · ₹${professionalFee.toLocaleString('en-IN')} (Students ₹${studentFee.toLocaleString('en-IN')})`}</span>
               <ArrowRight className="ml-2 w-4 h-4" />
             </a>
 
@@ -421,14 +428,22 @@ export default function IbcEventPage() {
               <div>
                 <h3 className="font-serif text-2xl font-bold text-white">Delegate Registration Form</h3>
                 <p className="text-xs text-[#cfc8b9] mt-1">
-                  Limited to 200 delegates • Subject to confirmation by Secretariat
+                  Limited to 200 delegates • Special subsidized rate available for Students of Law
                 </p>
               </div>
-              <div className="px-4 py-2 rounded-xl bg-[#091a13] border border-[#c5a880]/40 text-center sm:text-right">
-                <span className="text-[10px] uppercase tracking-widest text-[#c5a880] block">Registration Fee</span>
-                <span className="font-serif text-xl font-bold text-white">
-                  {eventSettings.price_inr > 0 ? `₹${eventSettings.price_inr.toLocaleString('en-IN')}` : 'Complimentary (Free)'}
-                </span>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="px-3.5 py-1.5 rounded-xl bg-[#091a13] border border-[#c5a880]/40 text-center sm:text-right">
+                  <span className="text-[10px] uppercase tracking-widest text-[#c5a880] block">Professional</span>
+                  <span className="font-serif text-sm sm:text-base font-bold text-white">
+                    {professionalFee > 0 ? `₹${professionalFee.toLocaleString('en-IN')}` : 'Complimentary'}
+                  </span>
+                </div>
+                <div className="px-3.5 py-1.5 rounded-xl bg-[#091a13] border border-emerald-500/40 text-center sm:text-right">
+                  <span className="text-[10px] uppercase tracking-widest text-emerald-400 block">Student</span>
+                  <span className="font-serif text-sm sm:text-base font-bold text-emerald-300">
+                    {studentFee > 0 ? `₹${studentFee.toLocaleString('en-IN')}` : 'Complimentary'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -465,6 +480,10 @@ export default function IbcEventPage() {
                   <div className="flex justify-between text-xs border-b border-[#c5a880]/20 pb-2">
                     <span className="text-[#8e8778]">Delegate Category:</span>
                     <span className="text-white">{registeredAttendee.category}</span>
+                  </div>
+                  <div className="flex justify-between text-xs border-b border-[#c5a880]/20 pb-2">
+                    <span className="text-[#8e8778]">Registration Fee:</span>
+                    <span className="font-mono font-bold text-[#c5a880]">₹{(registeredAttendee.amount_paid || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-[#8e8778]">Status:</span>
@@ -575,14 +594,25 @@ export default function IbcEventPage() {
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                       className="w-full bg-[#081711] border border-[#c5a880]/30 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-[#c5a880] transition-colors"
                     >
-                      <option value="Advocate / NCLT Practitioner">Advocate / NCLT Practitioner</option>
-                      <option value="Insolvency Professional (IP)">Insolvency Professional (IP)</option>
-                      <option value="Chartered Accountant / CS">Chartered Accountant / CS</option>
-                      <option value="Banker / Stressed Assets Team">Banker / Stressed Assets Team</option>
-                      <option value="Judicial / Academic Scholar">Judicial / Academic Scholar</option>
-                      <option value="Student of Law">Student of Law</option>
-                      <option value="Corporate Counsel / Officer">Corporate Counsel / Officer</option>
+                      <option value="Advocate / NCLT Practitioner">Advocate / NCLT Practitioner (₹{professionalFee.toLocaleString('en-IN')})</option>
+                      <option value="Insolvency Professional (IP)">Insolvency Professional (IP) (₹{professionalFee.toLocaleString('en-IN')})</option>
+                      <option value="Chartered Accountant / CS">Chartered Accountant / CS (₹{professionalFee.toLocaleString('en-IN')})</option>
+                      <option value="Banker / Stressed Assets Team">Banker / Stressed Assets Team (₹{professionalFee.toLocaleString('en-IN')})</option>
+                      <option value="Judicial / Academic Scholar">Judicial / Academic Scholar (₹{professionalFee.toLocaleString('en-IN')})</option>
+                      <option value="Student of Law">Student of Law (Concession · ₹{studentFee.toLocaleString('en-IN')})</option>
+                      <option value="Corporate Counsel / Officer">Corporate Counsel / Officer (₹{professionalFee.toLocaleString('en-IN')})</option>
                     </select>
+                    <div className="mt-1.5 flex items-center text-[11px]">
+                      {isStudentCategory ? (
+                        <span className="text-emerald-300 font-medium">
+                          🎓 Student concession applied: ₹{studentFee.toLocaleString('en-IN')}
+                        </span>
+                      ) : (
+                        <span className="text-[#c5a880] font-medium">
+                          💼 Professional delegate rate: ₹{professionalFee.toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Organization */}
@@ -634,7 +664,7 @@ export default function IbcEventPage() {
                       <span>Reserving Accreditation...</span>
                     ) : (
                       <>
-                        <span>{eventSettings.price_inr > 0 ? `Pay ₹${eventSettings.price_inr} & Confirm` : 'Confirm Delegate Seat'}</span>
+                        <span>{activeFee > 0 ? `Pay ₹${activeFee.toLocaleString('en-IN')} & Confirm (${isStudentCategory ? 'Student' : 'Professional'})` : 'Confirm Delegate Seat'}</span>
                         <ArrowRight className="ml-2 w-4 h-4" />
                       </>
                     )}

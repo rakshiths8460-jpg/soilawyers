@@ -13,9 +13,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { price_inr, is_registration_open, max_capacity } = body;
+    const { price_inr, student_price_inr, is_registration_open, max_capacity } = body;
     const updated = await updateEventConfig('ibc-turns-10', {
       price_inr: Number(price_inr),
+      student_price_inr: student_price_inr !== undefined ? Number(student_price_inr) : undefined,
       is_registration_open: Boolean(is_registration_open),
       max_capacity: Number(max_capacity) || 200,
     });

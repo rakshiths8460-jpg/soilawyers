@@ -32,13 +32,15 @@ export default function AdminDashboardPage() {
     totalRevenue: 0,
     seatsRemaining: 200,
     maxCapacity: 200,
-    priceInr: 0,
+    priceInr: 2000,
+    studentPriceInr: 1000,
     isOpen: true,
     isNeon: false,
   });
 
   // Price modification state
-  const [editPrice, setEditPrice] = useState<number>(0);
+  const [editPrice, setEditPrice] = useState<number>(2000);
+  const [editStudentPrice, setEditStudentPrice] = useState<number>(1000);
   const [editIsOpen, setEditIsOpen] = useState<boolean>(true);
   const [editCapacity, setEditCapacity] = useState<number>(200);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -83,7 +85,8 @@ export default function AdminDashboardPage() {
       if (data.success) {
         setAttendees(data.attendees);
         setStats(data.stats);
-        setEditPrice(data.stats.priceInr);
+        setEditPrice(data.stats.priceInr !== undefined ? data.stats.priceInr : 2000);
+        setEditStudentPrice(data.stats.studentPriceInr !== undefined ? data.stats.studentPriceInr : 1000);
         setEditIsOpen(data.stats.isOpen);
         setEditCapacity(data.stats.maxCapacity);
       }
@@ -104,6 +107,7 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           price_inr: editPrice,
+          student_price_inr: editStudentPrice,
           is_registration_open: editIsOpen,
           max_capacity: editCapacity,
         }),
@@ -247,11 +251,22 @@ export default function AdminDashboardPage() {
 
           <div className="bezel-shell">
             <div className="bezel-core p-6 space-y-1">
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Current Ticket Price</span>
-              <p className="font-serif text-3xl font-bold text-gold-300">
-                {stats.priceInr > 0 ? `₹${stats.priceInr.toLocaleString('en-IN')}` : 'Free'}
-              </p>
-              <span className="text-[11px] text-slate-500">Configured event price</span>
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Configured Pricing</span>
+              <div className="flex items-baseline space-x-3 pt-1">
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block font-medium">Professional</span>
+                  <p className="font-serif text-2xl font-bold text-gold-300">
+                    {stats.priceInr > 0 ? `₹${stats.priceInr.toLocaleString('en-IN')}` : 'Free'}
+                  </p>
+                </div>
+                <div className="border-l border-white/10 pl-3">
+                  <span className="text-[10px] uppercase text-emerald-400/90 block font-medium">Student</span>
+                  <p className="font-serif text-2xl font-bold text-emerald-300">
+                    {(stats.studentPriceInr ?? 1000) > 0 ? `₹${(stats.studentPriceInr ?? 1000).toLocaleString('en-IN')}` : 'Free'}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[11px] text-slate-500 block pt-1">Dynamic pricing applied</span>
             </div>
           </div>
 
@@ -281,7 +296,7 @@ export default function AdminDashboardPage() {
               <div>
                 <h3 className="font-serif text-xl font-bold text-white">Event Pricing & Capacity Controller</h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Change the price or toggle registrations. Changes reflect immediately on the public event page.
+                  Set independent pricing for Professionals and Students. Changes reflect immediately on the public event page.
                 </p>
               </div>
               {saveSuccess && (
@@ -292,10 +307,10 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            <form onSubmit={handleSaveSettings} className="grid grid-cols-1 sm:grid-cols-4 gap-6 items-end">
+            <form onSubmit={handleSaveSettings} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 items-end">
               <div>
                 <label className="block text-[11px] uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-                  Ticket Fee (in ₹ INR)
+                  Professional Fee (₹)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm">₹</span>
@@ -307,7 +322,24 @@ export default function AdminDashboardPage() {
                     className="w-full bg-legal-900 border border-white/10 rounded-xl pl-8 pr-4 py-2 text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
-                <span className="text-[10px] text-slate-500 mt-1 block">Set 0 for Complimentary/Free</span>
+                <span className="text-[10px] text-slate-500 mt-1 block">Standard professional rate</span>
+              </div>
+
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-emerald-300 font-semibold mb-1.5">
+                  Student Fee (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm">₹</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editStudentPrice}
+                    onChange={(e) => setEditStudentPrice(Number(e.target.value))}
+                    className="w-full bg-legal-900 border border-emerald-500/30 rounded-xl pl-8 pr-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <span className="text-[10px] text-emerald-400/80 mt-1 block">Only for Students of Law</span>
               </div>
 
               <div>
@@ -321,6 +353,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setEditCapacity(Number(e.target.value))}
                   className="w-full bg-legal-900 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-gold-400"
                 />
+                <span className="text-[10px] text-slate-500 mt-1 block">Total seat limit</span>
               </div>
 
               <div>
@@ -332,9 +365,10 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setEditIsOpen(e.target.value === 'open')}
                   className="w-full bg-legal-900 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-gold-400"
                 >
-                  <option value="open">Open (Accepting Registrations)</option>
-                  <option value="closed">Closed (Paused / Sold Out)</option>
+                  <option value="open">Open (Accepting)</option>
+                  <option value="closed">Closed (Paused)</option>
                 </select>
+                <span className="text-[10px] text-slate-500 mt-1 block">Live portal gate</span>
               </div>
 
               <div>
@@ -403,6 +437,7 @@ export default function AdminDashboardPage() {
                     <th className="py-3 px-3">Email</th>
                     <th className="py-3 px-3">Phone</th>
                     <th className="py-3 px-3">Category</th>
+                    <th className="py-3 px-3">Fee Paid</th>
                     <th className="py-3 px-3">Organization</th>
                     <th className="py-3 px-3">Status</th>
                     <th className="py-3 px-3">Registered On</th>
@@ -411,7 +446,7 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-white/5">
                   {attendees.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-500">
+                      <td colSpan={9} className="py-8 text-center text-slate-500">
                         No registrations recorded yet. Attendees who sign up via the event page will appear here.
                       </td>
                     </tr>
@@ -423,9 +458,18 @@ export default function AdminDashboardPage() {
                         <td className="py-3 px-3">{att.email}</td>
                         <td className="py-3 px-3 font-mono">{att.phone}</td>
                         <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px]">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] ${
+                              (att.category || '').toLowerCase().includes('student')
+                                ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-white/5 border border-white/10 text-slate-300'
+                            }`}
+                          >
                             {att.category || 'General'}
                           </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono font-semibold text-white">
+                          ₹{(att.amount_paid || 0).toLocaleString('en-IN')}
                         </td>
                         <td className="py-3 px-3 truncate max-w-[150px]">{att.organization || '—'}</td>
                         <td className="py-3 px-3">
