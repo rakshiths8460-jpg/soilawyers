@@ -13,11 +13,14 @@ export async function POST(request: Request) {
 
     // In mock mode when keys are not configured
     if (isMock || !isRazorpayConfigured()) {
+      const existingMock = await getAttendeeByTicketId(ticket_id);
+      const feeToCapture = existingMock?.fee_amount || 1000;
       const mockUpdated = await updateAttendeePayment(
         { ticket_id },
         {
           payment_status: 'paid',
           razorpay_payment_id: razorpay_payment_id || `mock_pay_${Date.now()}`,
+          amount_paid: feeToCapture,
         }
       );
       return NextResponse.json({
@@ -58,12 +61,14 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    // Idempotent update: mark paid
+    // Idempotent update: mark paid and capture the exact fee amount
+    const feeToCapture = existing.fee_amount || (existing.category?.toLowerCase().includes('student') ? 1000 : 2000);
     const updatedAttendee = await updateAttendeePayment(
       { ticket_id: existing.ticket_id },
       {
         payment_status: 'paid',
         razorpay_payment_id,
+        amount_paid: feeToCapture,
       }
     );
 

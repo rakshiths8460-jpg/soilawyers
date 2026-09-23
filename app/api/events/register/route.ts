@@ -47,7 +47,8 @@ export async function POST(request: Request) {
       organization: organization ? organization.trim() : '',
       designation: designation ? designation.trim() : '',
       category: userCategory,
-      amount_paid: price,
+      fee_amount: price,
+      amount_paid: price === 0 ? 0 : 0,
       payment_status: initialPaymentStatus,
     });
 
@@ -85,7 +86,8 @@ export async function POST(request: Request) {
           {
             payment_status: 'pending',
             razorpay_order_id: order.id,
-            amount_paid: price,
+            fee_amount: price,
+            amount_paid: 0,
           }
         );
         attendee.razorpay_order_id = order.id;
@@ -114,7 +116,7 @@ export async function POST(request: Request) {
     const mockOrderId = `mock_order_${attendee.ticket_id}_${Date.now()}`;
     await updateAttendeePayment(
       { ticket_id: attendee.ticket_id },
-      { payment_status: 'pending', amount_paid: price }
+      { payment_status: 'pending', fee_amount: price, amount_paid: 0 }
     );
     attendee.razorpay_order_id = mockOrderId;
 

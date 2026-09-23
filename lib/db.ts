@@ -23,6 +23,7 @@ export interface AttendeeRecord {
   organization?: string;
   designation?: string;
   category?: string;
+  fee_amount?: number;
   amount_paid: number;
   payment_status: 'free' | 'paid' | 'pending' | 'failed';
   razorpay_order_id?: string;
@@ -145,12 +146,27 @@ async function getNeonClient() {
         organization VARCHAR(255),
         designation VARCHAR(255),
         category VARCHAR(100),
+        fee_amount INTEGER NOT NULL DEFAULT 0,
         amount_paid INTEGER NOT NULL DEFAULT 0,
         payment_status VARCHAR(50) NOT NULL DEFAULT 'free',
         razorpay_order_id VARCHAR(100),
         razorpay_payment_id VARCHAR(100),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+    `;
+    await sql`
+      ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS fee_amount INTEGER NOT NULL DEFAULT 0;
+    `;
+    // Ensure existing pending or failed records do NOT show money as paid
+    await sql`
+      UPDATE event_registrations 
+      SET fee_amount = amount_paid 
+      WHERE (fee_amount IS NULL OR fee_amount = 0) AND amount_paid > 0;
+    `;
+    await sql`
+      UPDATE event_registrations 
+      SET amount_paid = 0 
+      WHERE payment_status = 'pending' OR payment_status = 'failed';
     `;
     await sql`
       CREATE TABLE IF NOT EXISTS contact_inquiries (
@@ -273,8 +289,14 @@ export async function createAttendeeRegistration(
 ): Promise<AttendeeRecord> {
   const ticket_id = `IBC10-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
   const created_at = new Date().toISOString();
+  const fee_amount = data.fee_amount !== undefined ? data.fee_amount : (data.amount_paid || 0);
+  const isPaid = data.payment_status === 'paid';
+  const amount_paid = isPaid ? (data.amount_paid || fee_amount) : 0;
+
   const record: AttendeeRecord = {
     ...data,
+    fee_amount,
+    amount_paid,
     ticket_id,
     created_at
   };
@@ -284,11 +306,11 @@ export async function createAttendeeRegistration(
     try {
       const rows = await sql`
         INSERT INTO event_registrations (
-          ticket_id, event_slug, name, email, phone, organization, designation, category, amount_paid, payment_status, razorpay_order_id, razorpay_payment_id
+          ticket_id, event_slug, name, email, phone, organization, designation, category, fee_amount, amount_paid, payment_status, razorpay_order_id, razorpay_payment_id
         ) VALUES (
           ${record.ticket_id}, ${record.event_slug}, ${record.name}, ${record.email}, ${record.phone},
           ${record.organization || ''}, ${record.designation || ''}, ${record.category || 'General Delegate'},
-          ${record.amount_paid}, ${record.payment_status}, ${record.razorpay_order_id || ''}, ${record.razorpay_payment_id || ''}
+          ${record.fee_amount}, ${record.amount_paid}, ${record.payment_status}, ${record.razorpay_order_id || ''}, ${record.razorpay_payment_id || ''}
         )
         RETURNING *;
       `;
@@ -348,8 +370,10 @@ export async function updateAttendeePayment(
     razorpay_payment_id?: string;
     razorpay_order_id?: string;
     amount_paid?: number;
+    fee_amount?: number;
   }
 ): Promise<AttendeeRecord | null> {
+  const isPaid = updates.payment_status === 'paid';
   const sql = await getNeonClient();
   if (sql) {
     try {
@@ -360,7 +384,11 @@ export async function updateAttendeePayment(
           SET payment_status = ${updates.payment_status},
               razorpay_payment_id = COALESCE(${updates.razorpay_payment_id || null}, razorpay_payment_id),
               razorpay_order_id = COALESCE(${updates.razorpay_order_id || null}, razorpay_order_id),
-              amount_paid = COALESCE(${updates.amount_paid !== undefined ? updates.amount_paid : null}, amount_paid)
+              fee_amount = COALESCE(${updates.fee_amount !== undefined ? updates.fee_amount : null}, fee_amount),
+              amount_paid = CASE 
+                WHEN ${isPaid} THEN COALESCE(${updates.amount_paid !== undefined ? updates.amount_paid : null}, NULLIF(amount_paid, 0), fee_amount, 0)
+                ELSE 0
+              END
           WHERE ticket_id = ${identifier.ticket_id}
           RETURNING *;
         `;
@@ -370,7 +398,11 @@ export async function updateAttendeePayment(
           SET payment_status = ${updates.payment_status},
               razorpay_payment_id = COALESCE(${updates.razorpay_payment_id || null}, razorpay_payment_id),
               razorpay_order_id = COALESCE(${updates.razorpay_order_id || null}, razorpay_order_id),
-              amount_paid = COALESCE(${updates.amount_paid !== undefined ? updates.amount_paid : null}, amount_paid)
+              fee_amount = COALESCE(${updates.fee_amount !== undefined ? updates.fee_amount : null}, fee_amount),
+              amount_paid = CASE 
+                WHEN ${isPaid} THEN COALESCE(${updates.amount_paid !== undefined ? updates.amount_paid : null}, NULLIF(amount_paid, 0), fee_amount, 0)
+                ELSE 0
+              END
           WHERE razorpay_order_id = ${identifier.order_id}
           RETURNING *;
         `;
@@ -390,12 +422,19 @@ export async function updateAttendeePayment(
   );
 
   if (idx !== -1) {
+    const existing = store.attendees[idx];
+    const newFee = updates.fee_amount !== undefined ? updates.fee_amount : (existing.fee_amount || existing.amount_paid || 0);
+    const newAmountPaid = isPaid
+      ? (updates.amount_paid !== undefined ? updates.amount_paid : (existing.amount_paid || newFee))
+      : 0;
+
     store.attendees[idx] = {
-      ...store.attendees[idx],
+      ...existing,
       payment_status: updates.payment_status,
-      razorpay_payment_id: updates.razorpay_payment_id || store.attendees[idx].razorpay_payment_id,
-      razorpay_order_id: updates.razorpay_order_id || store.attendees[idx].razorpay_order_id,
-      amount_paid: updates.amount_paid !== undefined ? updates.amount_paid : store.attendees[idx].amount_paid,
+      razorpay_payment_id: updates.razorpay_payment_id || existing.razorpay_payment_id,
+      razorpay_order_id: updates.razorpay_order_id || existing.razorpay_order_id,
+      fee_amount: newFee,
+      amount_paid: newAmountPaid,
     };
     saveLocalStore(store);
     return store.attendees[idx];
@@ -405,6 +444,18 @@ export async function updateAttendeePayment(
 }
 
 export async function getAllAttendees(slug?: string, search?: string): Promise<AttendeeRecord[]> {
+  const sanitize = (a: any): AttendeeRecord => {
+    const isPaid = a.payment_status === 'paid';
+    const fee = a.fee_amount !== undefined && a.fee_amount !== null && Number(a.fee_amount) > 0
+      ? Number(a.fee_amount)
+      : Number(a.amount_paid || 0);
+    return {
+      ...a,
+      fee_amount: fee,
+      amount_paid: isPaid ? (Number(a.amount_paid) > 0 ? Number(a.amount_paid) : fee) : 0,
+    };
+  };
+
   const sql = await getNeonClient();
   if (sql) {
     try {
@@ -418,7 +469,7 @@ export async function getAllAttendees(slug?: string, search?: string): Promise<A
           SELECT * FROM event_registrations ORDER BY created_at DESC;
         `;
       }
-      let list = rows as unknown as AttendeeRecord[];
+      let list = (rows as unknown as AttendeeRecord[]).map(sanitize);
       if (search) {
         const q = search.toLowerCase();
         list = list.filter(
@@ -438,7 +489,7 @@ export async function getAllAttendees(slug?: string, search?: string): Promise<A
 
   // Local fallback
   const store = getLocalStore();
-  let list: AttendeeRecord[] = store.attendees || [];
+  let list: AttendeeRecord[] = (store.attendees || []).map(sanitize);
   if (slug) {
     list = list.filter((a) => a.event_slug === slug);
   }

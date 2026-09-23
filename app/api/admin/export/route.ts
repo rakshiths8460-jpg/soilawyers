@@ -6,7 +6,7 @@ export async function GET() {
     const attendees = await getAllAttendees('ibc-turns-10');
     
     // Generate CSV
-    const headers = ['Ticket ID', 'Name', 'Email', 'Phone', 'Category', 'Organization', 'Designation', 'Fee (INR)', 'Payment Status', 'Razorpay Order ID', 'Razorpay Payment ID', 'Registration Date'];
+    const headers = ['Ticket ID', 'Name', 'Email', 'Phone', 'Category', 'Organization', 'Designation', 'Ticket Fee (INR)', 'Fee Paid (INR)', 'Payment Status', 'Razorpay Order ID', 'Razorpay Payment ID', 'Registration Date'];
     const rows = attendees.map(a => [
       a.ticket_id,
       `"${(a.name || '').replace(/"/g, '""')}"`,
@@ -15,7 +15,8 @@ export async function GET() {
       `"${(a.category || '').replace(/"/g, '""')}"`,
       `"${(a.organization || '').replace(/"/g, '""')}"`,
       `"${(a.designation || '').replace(/"/g, '""')}"`,
-      a.amount_paid,
+      a.fee_amount || a.amount_paid || 0,
+      a.payment_status === 'paid' ? (a.amount_paid || 0) : 0,
       a.payment_status,
       `"${(a.razorpay_order_id || '').replace(/"/g, '""')}"`,
       `"${(a.razorpay_payment_id || '').replace(/"/g, '""')}"`,

@@ -241,38 +241,48 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Analytics Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bezel-shell">
-            <div className="bezel-core p-6 space-y-1">
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Total Attendees</span>
-              <p className="font-serif text-3xl font-bold text-white">{stats.totalRegistrations}</p>
-              <span className="text-[11px] text-slate-500">Confirmed delegate seats</span>
+            <div className="bezel-core p-5 space-y-1">
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Confirmed Attendees</span>
+              <p className="font-serif text-3xl font-bold text-white">{stats.totalConfirmed ?? stats.totalRegistrations}</p>
+              <span className="text-[11px] text-slate-500">{stats.totalPending || 0} pending payment</span>
             </div>
           </div>
 
           <div className="bezel-shell">
-            <div className="bezel-core p-6 space-y-1">
+            <div className="bezel-core p-5 space-y-1">
+              <span className="text-[10px] uppercase tracking-widest text-emerald-400/90 font-semibold">Captured Revenue</span>
+              <p className="font-serif text-3xl font-bold text-emerald-300">
+                ₹{(stats.totalRevenue || 0).toLocaleString('en-IN')}
+              </p>
+              <span className="text-[11px] text-emerald-500/70">Verified Razorpay payments</span>
+            </div>
+          </div>
+
+          <div className="bezel-shell">
+            <div className="bezel-core p-5 space-y-1">
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Configured Pricing</span>
-              <div className="flex items-baseline space-x-3 pt-1">
+              <div className="flex items-baseline space-x-2 pt-1">
                 <div>
-                  <span className="text-[10px] uppercase text-slate-400 block font-medium">Professional</span>
-                  <p className="font-serif text-2xl font-bold text-gold-300">
+                  <span className="text-[9px] uppercase text-slate-400 block font-medium">Prof.</span>
+                  <p className="font-serif text-xl font-bold text-gold-300">
                     {stats.priceInr > 0 ? `₹${stats.priceInr.toLocaleString('en-IN')}` : 'Free'}
                   </p>
                 </div>
-                <div className="border-l border-white/10 pl-3">
-                  <span className="text-[10px] uppercase text-emerald-400/90 block font-medium">Student</span>
-                  <p className="font-serif text-2xl font-bold text-emerald-300">
+                <div className="border-l border-white/10 pl-2">
+                  <span className="text-[9px] uppercase text-emerald-400/90 block font-medium">Student</span>
+                  <p className="font-serif text-xl font-bold text-emerald-300">
                     {(stats.studentPriceInr ?? 1000) > 0 ? `₹${(stats.studentPriceInr ?? 1000).toLocaleString('en-IN')}` : 'Free'}
                   </p>
                 </div>
               </div>
-              <span className="text-[11px] text-slate-500 block pt-1">Dynamic pricing applied</span>
+              <span className="text-[11px] text-slate-500 block pt-0.5">Live event rates</span>
             </div>
           </div>
 
           <div className="bezel-shell">
-            <div className="bezel-core p-6 space-y-1">
+            <div className="bezel-core p-5 space-y-1">
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Seats Remaining</span>
               <p className="font-serif text-3xl font-bold text-white">{stats.seatsRemaining}</p>
               <span className="text-[11px] text-slate-500">Out of {stats.maxCapacity} capacity</span>
@@ -280,7 +290,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="bezel-shell">
-            <div className="bezel-core p-6 space-y-1">
+            <div className="bezel-core p-5 space-y-1">
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Registration Status</span>
               <p className={`font-serif text-3xl font-bold ${stats.isOpen ? 'text-emerald-400' : 'text-red-400'}`}>
                 {stats.isOpen ? 'OPEN' : 'CLOSED'}
@@ -485,7 +495,7 @@ export default function AdminDashboardPage() {
                     <th className="py-3 px-3">Delegate</th>
                     <th className="py-3 px-3">Contact</th>
                     <th className="py-3 px-3">Category</th>
-                    <th className="py-3 px-3">Fee Paid</th>
+                    <th className="py-3 px-3">Fee / Payment</th>
                     <th className="py-3 px-3">Razorpay Ref</th>
                     <th className="py-3 px-3">Payment Status</th>
                     <th className="py-3 px-3">Registered On</th>
@@ -523,8 +533,44 @@ export default function AdminDashboardPage() {
                               {att.category || 'General'}
                             </span>
                           </td>
-                          <td className="py-3 px-3 font-mono font-semibold text-white">
-                            ₹{(att.amount_paid || 0).toLocaleString('en-IN')}
+                          <td className="py-3 px-3 font-mono">
+                            {att.payment_status === 'paid' ? (
+                              <div>
+                                <span className="font-bold text-emerald-400 block text-xs">
+                                  ₹{(att.amount_paid || 0).toLocaleString('en-IN')}
+                                </span>
+                                <span className="text-[10px] text-emerald-500/80 font-sans font-medium flex items-center">
+                                  ✓ Captured
+                                </span>
+                              </div>
+                            ) : att.payment_status === 'pending' ? (
+                              <div>
+                                <span className="font-bold text-slate-400 block text-xs">
+                                  ₹0
+                                </span>
+                                <span className="text-[10px] text-amber-400/90 font-sans block">
+                                  ₹{(att.fee_amount || 0).toLocaleString('en-IN')} due (pending)
+                                </span>
+                              </div>
+                            ) : att.payment_status === 'failed' ? (
+                              <div>
+                                <span className="font-bold text-slate-500 block text-xs">
+                                  ₹0
+                                </span>
+                                <span className="text-[10px] text-red-400/80 font-sans block">
+                                  Payment failed
+                                </span>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="font-semibold text-slate-300 block text-xs">
+                                  ₹0
+                                </span>
+                                <span className="text-[10px] text-blue-400 font-sans block">
+                                  Complimentary
+                                </span>
+                              </div>
+                            )}
                           </td>
                           <td className="py-3 px-3 font-mono text-[10px]">
                             {att.razorpay_payment_id ? (

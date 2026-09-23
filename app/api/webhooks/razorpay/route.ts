@@ -49,16 +49,17 @@ export async function POST(request: Request) {
                          (ticketId ? await getAttendeeByTicketId(ticketId) : null);
 
         if (existing) {
-          // Idempotent update
+          const finalAmount = amountInRupees || existing.fee_amount || (existing.category?.toLowerCase().includes('student') ? 1000 : 2000);
+          // Idempotent update: mark paid and record captured revenue
           await updateAttendeePayment(
             { ticket_id: existing.ticket_id },
             {
               payment_status: 'paid',
               razorpay_payment_id: paymentId,
-              amount_paid: amountInRupees || existing.amount_paid,
+              amount_paid: finalAmount,
             }
           );
-          console.log(`[Razorpay Webhook] Successfully marked ticket ${existing.ticket_id} as paid via payment.captured (${paymentId})`);
+          console.log(`[Razorpay Webhook] Successfully marked ticket ${existing.ticket_id} as paid via payment.captured (${paymentId}, ₹${finalAmount})`);
         } else {
           console.warn(`[Razorpay Webhook] No matching registration found for payment ${paymentId}, order ${orderId}, ticket ${ticketId}`);
         }
@@ -68,15 +69,20 @@ export async function POST(request: Request) {
       if (order) {
         const orderId = order.id;
         const ticketId = order.notes?.ticket_id;
+        const amountInRupees = order.amount_paid ? Math.round(order.amount_paid / 100) : undefined;
         const existing = (orderId ? await getAttendeeByOrderId(orderId) : null) ||
                          (ticketId ? await getAttendeeByTicketId(ticketId) : null);
 
         if (existing && existing.payment_status !== 'paid') {
+          const finalAmount = amountInRupees || existing.fee_amount || (existing.category?.toLowerCase().includes('student') ? 1000 : 2000);
           await updateAttendeePayment(
             { ticket_id: existing.ticket_id },
-            { payment_status: 'paid' }
+            {
+              payment_status: 'paid',
+              amount_paid: finalAmount,
+            }
           );
-          console.log(`[Razorpay Webhook] Marked ticket ${existing.ticket_id} as paid via order.paid (${orderId})`);
+          console.log(`[Razorpay Webhook] Marked ticket ${existing.ticket_id} as paid via order.paid (${orderId}, ₹${finalAmount})`);
         }
       }
     } else if (eventType === 'payment.failed') {
@@ -90,7 +96,10 @@ export async function POST(request: Request) {
         if (existing && existing.payment_status === 'pending') {
           await updateAttendeePayment(
             { ticket_id: existing.ticket_id },
-            { payment_status: 'failed' }
+            {
+              payment_status: 'failed',
+              amount_paid: 0,
+            }
           );
           console.log(`[Razorpay Webhook] Marked ticket ${existing.ticket_id} as failed for order ${orderId}`);
         }
