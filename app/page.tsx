@@ -50,31 +50,35 @@ export default function HomePage() {
               </div>
 
               {/* Primary Display Title */}
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08] text-balance">
-                Advancing the Rule of Law, Legal Scholarship, &{' '}
-                <span className="bronze-gradient-text">Bar Fraternity</span>
+              <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.05] text-balance">
+                IBC Turns 10
               </h1>
 
               {/* Subtext */}
-              <p className="text-sm sm:text-base text-slate-300 font-sans leading-relaxed max-w-xl font-light">
-                A non-political, not-for-profit learned society uniting advocates, jurists, and academicians across Indian and international jurisdictions.
-              </p>
+              <div className="space-y-2">
+                <p className="text-base sm:text-lg text-bronze-300 font-serif italic">
+                  A Decade of Resolution (2016–2026)
+                </p>
+                <p className="text-sm sm:text-base text-slate-300 font-sans leading-relaxed max-w-xl font-light">
+                  National Conference on the Insolvency and Bankruptcy Code, convened by the Society of Indian Lawyers in association with INSOL India. 24 October 2026 &bull; Chandigarh.
+                </p>
+              </div>
 
               {/* Architectural Action Buttons */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 font-sans">
                 <Link
-                  href="/about-us"
+                  href="/events/ibc-turns-10#register"
                   className="inline-flex items-center justify-center px-6 py-3 rounded text-xs font-semibold uppercase tracking-[0.14em] text-institutional-950 bg-bronze-400 hover:bg-bronze-300 transition-all duration-200 active:scale-[0.98] group"
                 >
-                  <span>Explore Constitutional Charter</span>
+                  <span>Register for IBC Turns 10</span>
                   <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
 
                 <Link
-                  href="/events"
+                  href="/events/ibc-turns-10"
                   className="inline-flex items-center justify-center px-5 py-3 rounded text-xs font-semibold uppercase tracking-[0.14em] text-slate-200 border border-white/15 hover:border-bronze-400/50 hover:text-white bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-200 active:scale-[0.98]"
                 >
-                  <span>Archival Proceedings & Events</span>
+                  <span>Explore IBC Turns 10</span>
                 </Link>
               </div>
             </motion.div>
