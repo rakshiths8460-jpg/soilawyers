@@ -196,7 +196,7 @@ export default function AdminInquiriesPage() {
           </form>
 
           <div className="text-center text-[11px] text-slate-500 font-sans">
-            Society of Indian Lawyers · Act XXI of 1860
+            Society of Indian Lawyers · DC-RIA-RS/2024/00041
           </div>
         </div>
       </div>

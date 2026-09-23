@@ -40,7 +40,7 @@ export default function AboutUsPage() {
         <div className="max-w-4xl space-y-4">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded bg-white/[0.03] border border-white/10 text-[10px] font-sans uppercase tracking-[0.22em] font-medium text-bronze-400">
             <span className="w-1.5 h-1.5 rounded-full bg-bronze-400" />
-            <span>Constitutional Charter · Act XXI of 1860</span>
+            <span>Constitutional Charter · DC-RIA-RS/2024/00041</span>
           </div>
           <h1 className="font-serif text-4xl sm:text-6xl font-bold text-white tracking-tight leading-tight">
             About the Society

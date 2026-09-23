@@ -46,7 +46,7 @@ export default function HomePage() {
               {/* Eyebrow Label */}
               <div className="inline-flex items-center space-x-2.5 px-3 py-1 rounded bg-white/[0.03] border border-white/10 text-[10px] font-sans uppercase tracking-[0.22em] font-medium text-slate-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-bronze-400" />
-                <span>Learned Society · Act XXI of 1860 · Chandigarh</span>
+                <span>DC-RIA-RS/2024/00041 · Act XXI of 1860 · Chandigarh</span>
               </div>
 
               {/* Primary Display Title */}

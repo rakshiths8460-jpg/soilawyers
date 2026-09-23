@@ -10,7 +10,7 @@ import { ArrowUpRight, Menu, X } from 'lucide-react';
 const NAV_ITEMS = [
   { label: 'HOME', href: '/' },
   { label: 'ABOUT US', href: '/about-us' },
-  { label: 'EVENTS', href: '/events' },
+  { label: 'IBC TURNS 10', href: '/events/ibc-turns-10' },
   { label: 'BLOGS', href: '/blogs' },
   { label: 'THE TEAM', href: '/the-team' },
   { label: 'CONTACT', href: '/#contact' },
@@ -65,7 +65,7 @@ export default function Navbar() {
                 </span>
               </div>
               <span className="text-[10px] tracking-[0.16em] uppercase text-slate-400 font-sans hidden md:inline-block">
-                Learned Legal Society · Act XXI of 1860
+                DC-RIA-RS/2024/00041
               </span>
             </div>
           </Link>
@@ -78,6 +78,8 @@ export default function Navbar() {
                   ? pathname === '/'
                   : item.href.startsWith('/#')
                   ? false
+                  : item.href.startsWith('/events')
+                  ? pathname.startsWith('/events')
                   : pathname.startsWith(item.href);
 
               return (
@@ -143,6 +145,8 @@ export default function Navbar() {
                     ? pathname === '/'
                     : item.href.startsWith('/#')
                     ? false
+                    : item.href.startsWith('/events')
+                    ? pathname.startsWith('/events')
                     : pathname.startsWith(item.href);
 
                 return (
@@ -178,7 +182,7 @@ export default function Navbar() {
                 <ArrowUpRight className="ml-1.5 w-4 h-4" />
               </Link>
               <div className="text-[11px] text-center text-slate-500 font-sans tracking-wide">
-                Societies Registration Act, 1860 · HQ Chandigarh
+                DC-RIA-RS/2024/00041 · HQ Chandigarh
               </div>
             </div>
           </motion.div>

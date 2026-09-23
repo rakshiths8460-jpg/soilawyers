@@ -24,7 +24,7 @@ export default function Footer() {
                   Society of Indian Lawyers
                 </span>
                 <span className="text-[10px] text-bronze-400 uppercase tracking-[0.2em] font-sans font-medium">
-                  A Learned Legal Society · Founded 2024
+                  DC-RIA-RS/2024/00041 · Founded 2024
                 </span>
               </div>
             </div>
@@ -35,7 +35,7 @@ export default function Footer() {
 
             <div className="pt-2 text-[11px] text-slate-400 flex items-center space-x-2 font-sans">
               <Shield className="w-3.5 h-3.5 text-bronze-400 flex-shrink-0" />
-              <span>Registered under the Societies Registration Act, 1860 (Act XXI of 1860)</span>
+              <span>Registered under Societies Registration Act, 1860 · DC-RIA-RS/2024/00041</span>
             </div>
           </div>
 
