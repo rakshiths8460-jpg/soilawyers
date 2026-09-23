@@ -80,14 +80,15 @@ function saveLocalStore(data: any) {
 }
 
 export function isNeonConfigured(): boolean {
-  const url = process.env.DATABASE_URL;
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   return Boolean(url && url.startsWith('postgres') && !url.includes('YOUR_NEON_DB_URL'));
 }
 
 async function getNeonClient() {
   if (!isNeonConfigured()) return null;
   try {
-    const sql = neon(process.env.DATABASE_URL!);
+    const connStr = (process.env.DATABASE_URL || process.env.POSTGRES_URL)!;
+    const sql = neon(connStr);
     // Ensure tables exist
     await sql`
       CREATE TABLE IF NOT EXISTS event_settings (
