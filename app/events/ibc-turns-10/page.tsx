@@ -676,7 +676,7 @@ export default function IbcEventPage() {
         </div>
 
         {/* Conveners & Correspondence Box (Page 6 of Brochure) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 rounded-2xl bg-[#081711] border border-[#c5a880]/30 text-center md:text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 rounded-2xl bg-[#081711] border border-[#c5a880]/30 text-center md:text-justify">
           <div className="space-y-1">
             <span className="text-[10px] uppercase tracking-[0.25em] text-[#c5a880] font-semibold block">CONVENERS</span>
             <p className="font-serif text-lg font-bold text-white">SUVIR SIDHU · KOMAL ABROL</p>

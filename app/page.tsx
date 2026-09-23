@@ -41,7 +41,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:col-span-7 space-y-6 text-left"
+              className="lg:col-span-7 space-y-6 text-justify"
             >
               {/* Eyebrow Label */}
               <div className="inline-flex items-center space-x-2.5 px-3 py-1 rounded bg-white/[0.03] border border-white/10 text-[10px] font-sans uppercase tracking-[0.22em] font-medium text-slate-300">

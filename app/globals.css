@@ -16,6 +16,27 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+/* Global Text Justification across all textual blocks */
+p,
+article,
+blockquote,
+dd,
+li,
+.prose {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+/* Form controls retain functional input alignment */
+input,
+textarea,
+select {
+  text-align: left;
 }
 
 ::selection {
