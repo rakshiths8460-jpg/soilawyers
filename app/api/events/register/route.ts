@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getEventConfig, createAttendeeRegistration, updateAttendeePayment } from '@/lib/db';
+import { getEventConfig, createAttendeeRegistration, updateAttendeePayment, getCategoryFee } from '@/lib/db';
 import { createRazorpayOrder, isRazorpayConfigured, getRazorpayKeyId } from '@/lib/razorpay';
 
 export async function POST(request: Request) {
@@ -29,12 +29,9 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // Server-enforced pricing (client cannot manipulate)
-    const userCategory = (category || 'General Delegate').trim();
-    const isStudent = userCategory.toLowerCase().includes('student');
-    const price = isStudent
-      ? (config.student_price_inr !== undefined && config.student_price_inr !== null ? config.student_price_inr : 1000)
-      : (config.price_inr !== undefined && config.price_inr !== null ? config.price_inr : 2000);
+    // Server-enforced pricing based on delegate category (client cannot manipulate)
+    const userCategory = (category || 'Advocate / Lawyer').trim();
+    const price = getCategoryFee(userCategory, config);
 
     // Initial registration record (marked pending for paid events, or free for 0 fee)
     const initialPaymentStatus = price === 0 ? 'free' : 'pending';

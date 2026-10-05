@@ -13,12 +13,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { price_inr, student_price_inr, is_registration_open, max_capacity } = body;
+    const { price_inr, student_price_inr, lawyer_price_inr, ip_price_inr, is_registration_open, max_capacity } = body;
     const updated = await updateEventConfig('ibc-turns-10', {
-      price_inr: Number(price_inr),
+      price_inr: price_inr !== undefined ? Number(price_inr) : undefined,
       student_price_inr: student_price_inr !== undefined ? Number(student_price_inr) : undefined,
-      is_registration_open: Boolean(is_registration_open),
-      max_capacity: Number(max_capacity) || 200,
+      lawyer_price_inr: lawyer_price_inr !== undefined ? Number(lawyer_price_inr) : undefined,
+      ip_price_inr: ip_price_inr !== undefined ? Number(ip_price_inr) : undefined,
+      is_registration_open: is_registration_open !== undefined ? Boolean(is_registration_open) : undefined,
+      max_capacity: max_capacity !== undefined ? Number(max_capacity) : 200,
     });
     return NextResponse.json({ success: true, config: updated });
   } catch (err: any) {

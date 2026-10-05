@@ -8,9 +8,48 @@ export interface EventConfig {
   title: string;
   price_inr: number;
   student_price_inr: number;
+  lawyer_price_inr?: number;
+  ip_price_inr?: number;
   is_registration_open: boolean;
   max_capacity: number;
   updated_at?: string;
+}
+
+/**
+ * Universal category-based fee calculator
+ * Ensures identical fee resolution on client, API, and webhook
+ */
+export function getCategoryFee(
+  category: string,
+  config?: {
+    price_inr?: number;
+    student_price_inr?: number;
+    lawyer_price_inr?: number;
+    ip_price_inr?: number;
+  }
+): number {
+  const cat = (category || '').toLowerCase().trim();
+  const studentFee = config?.student_price_inr ?? 1000;
+  const ipFee = config?.ip_price_inr ?? 2500;
+  const lawyerFee = config?.lawyer_price_inr ?? config?.price_inr ?? 2000;
+  const standardFee = config?.price_inr ?? 2000;
+
+  if (cat.includes('student')) {
+    return studentFee;
+  }
+  if (cat.includes('insolvency') || cat.includes('ip') || cat.includes('resolution professional')) {
+    return ipFee;
+  }
+  if (
+    cat.includes('lawyer') ||
+    cat.includes('advocate') ||
+    cat.includes('nclt practitioner') ||
+    cat.includes('counsel') ||
+    cat.includes('bar')
+  ) {
+    return lawyerFee;
+  }
+  return standardFee;
 }
 
 export interface AttendeeRecord {
@@ -79,6 +118,12 @@ function getLocalStore() {
       if (parsed.config['ibc-turns-10'].price_inr === 0 || parsed.config['ibc-turns-10'].price_inr === undefined) {
         parsed.config['ibc-turns-10'].price_inr = 2000;
       }
+      if (parsed.config['ibc-turns-10'].lawyer_price_inr === undefined) {
+        parsed.config['ibc-turns-10'].lawyer_price_inr = 2000;
+      }
+      if (parsed.config['ibc-turns-10'].ip_price_inr === undefined) {
+        parsed.config['ibc-turns-10'].ip_price_inr = 2500;
+      }
     }
     return parsed;
   } catch (err) {
@@ -89,6 +134,8 @@ function getLocalStore() {
           title: 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code',
           price_inr: 2000,
           student_price_inr: 1000,
+          lawyer_price_inr: 2000,
+          ip_price_inr: 2500,
           is_registration_open: true,
           max_capacity: 200,
           updated_at: new Date().toISOString()
@@ -127,6 +174,8 @@ async function getNeonClient() {
         title VARCHAR(255) NOT NULL,
         price_inr INTEGER NOT NULL DEFAULT 2000,
         student_price_inr INTEGER NOT NULL DEFAULT 1000,
+        lawyer_price_inr INTEGER NOT NULL DEFAULT 2000,
+        ip_price_inr INTEGER NOT NULL DEFAULT 2500,
         is_registration_open BOOLEAN NOT NULL DEFAULT true,
         max_capacity INTEGER NOT NULL DEFAULT 200,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -134,6 +183,12 @@ async function getNeonClient() {
     `;
     await sql`
       ALTER TABLE event_settings ADD COLUMN IF NOT EXISTS student_price_inr INTEGER NOT NULL DEFAULT 1000;
+    `;
+    await sql`
+      ALTER TABLE event_settings ADD COLUMN IF NOT EXISTS lawyer_price_inr INTEGER NOT NULL DEFAULT 2000;
+    `;
+    await sql`
+      ALTER TABLE event_settings ADD COLUMN IF NOT EXISTS ip_price_inr INTEGER NOT NULL DEFAULT 2500;
     `;
     await sql`
       CREATE TABLE IF NOT EXISTS event_registrations (
@@ -202,12 +257,14 @@ export async function getEventConfig(slug: string = 'ibc-turns-10'): Promise<Eve
           ...item,
           price_inr: item.price_inr !== undefined && item.price_inr !== null ? Number(item.price_inr) : 2000,
           student_price_inr: item.student_price_inr !== undefined && item.student_price_inr !== null ? Number(item.student_price_inr) : 1000,
+          lawyer_price_inr: item.lawyer_price_inr !== undefined && item.lawyer_price_inr !== null ? Number(item.lawyer_price_inr) : 2000,
+          ip_price_inr: item.ip_price_inr !== undefined && item.ip_price_inr !== null ? Number(item.ip_price_inr) : 2500,
         };
       }
       // Insert default if not exists
       const inserted = await sql`
-        INSERT INTO event_settings (event_slug, title, price_inr, student_price_inr, is_registration_open, max_capacity)
-        VALUES (${slug}, 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code', 2000, 1000, true, 200)
+        INSERT INTO event_settings (event_slug, title, price_inr, student_price_inr, lawyer_price_inr, ip_price_inr, is_registration_open, max_capacity)
+        VALUES (${slug}, 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code', 2000, 1000, 2000, 2500, true, 200)
         RETURNING *;
       `;
       const newItem = inserted[0] as unknown as EventConfig;
@@ -215,6 +272,8 @@ export async function getEventConfig(slug: string = 'ibc-turns-10'): Promise<Eve
         ...newItem,
         price_inr: newItem.price_inr !== undefined && newItem.price_inr !== null ? Number(newItem.price_inr) : 2000,
         student_price_inr: newItem.student_price_inr !== undefined && newItem.student_price_inr !== null ? Number(newItem.student_price_inr) : 1000,
+        lawyer_price_inr: newItem.lawyer_price_inr !== undefined && newItem.lawyer_price_inr !== null ? Number(newItem.lawyer_price_inr) : 2000,
+        ip_price_inr: newItem.ip_price_inr !== undefined && newItem.ip_price_inr !== null ? Number(newItem.ip_price_inr) : 2500,
       };
     } catch (e) {
       console.error('Neon query error in getEventConfig:', e);
@@ -229,6 +288,8 @@ export async function getEventConfig(slug: string = 'ibc-turns-10'): Promise<Eve
       title: 'IBC Turns 10: A Decade of the Insolvency & Bankruptcy Code',
       price_inr: 2000,
       student_price_inr: 1000,
+      lawyer_price_inr: 2000,
+      ip_price_inr: 2500,
       is_registration_open: true,
       max_capacity: 200,
       updated_at: new Date().toISOString()
@@ -241,13 +302,26 @@ export async function getEventConfig(slug: string = 'ibc-turns-10'): Promise<Eve
     if (store.config[slug].price_inr === 0 || store.config[slug].price_inr === undefined) {
       store.config[slug].price_inr = 2000;
     }
+    if (store.config[slug].lawyer_price_inr === undefined) {
+      store.config[slug].lawyer_price_inr = 2000;
+    }
+    if (store.config[slug].ip_price_inr === undefined) {
+      store.config[slug].ip_price_inr = 2500;
+    }
   }
   return store.config[slug];
 }
 
 export async function updateEventConfig(
   slug: string,
-  updates: { price_inr?: number; student_price_inr?: number; is_registration_open?: boolean; max_capacity?: number }
+  updates: {
+    price_inr?: number;
+    student_price_inr?: number;
+    lawyer_price_inr?: number;
+    ip_price_inr?: number;
+    is_registration_open?: boolean;
+    max_capacity?: number;
+  }
 ): Promise<EventConfig> {
   const sql = await getNeonClient();
   if (sql) {
@@ -255,12 +329,20 @@ export async function updateEventConfig(
       const current = await getEventConfig(slug);
       const newPrice = updates.price_inr !== undefined ? updates.price_inr : current.price_inr;
       const newStudentPrice = updates.student_price_inr !== undefined ? updates.student_price_inr : (current.student_price_inr ?? 1000);
+      const newLawyerPrice = updates.lawyer_price_inr !== undefined ? updates.lawyer_price_inr : (current.lawyer_price_inr ?? 2000);
+      const newIpPrice = updates.ip_price_inr !== undefined ? updates.ip_price_inr : (current.ip_price_inr ?? 2500);
       const newOpen = updates.is_registration_open !== undefined ? updates.is_registration_open : current.is_registration_open;
       const newCap = updates.max_capacity !== undefined ? updates.max_capacity : current.max_capacity;
 
       const rows = await sql`
         UPDATE event_settings
-        SET price_inr = ${newPrice}, student_price_inr = ${newStudentPrice}, is_registration_open = ${newOpen}, max_capacity = ${newCap}, updated_at = CURRENT_TIMESTAMP
+        SET price_inr = ${newPrice},
+            student_price_inr = ${newStudentPrice},
+            lawyer_price_inr = ${newLawyerPrice},
+            ip_price_inr = ${newIpPrice},
+            is_registration_open = ${newOpen},
+            max_capacity = ${newCap},
+            updated_at = CURRENT_TIMESTAMP
         WHERE event_slug = ${slug}
         RETURNING *;
       `;

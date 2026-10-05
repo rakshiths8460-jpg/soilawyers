@@ -35,6 +35,8 @@ export async function GET(request: Request) {
         maxCapacity: config.max_capacity,
         priceInr: config.price_inr,
         studentPriceInr: config.student_price_inr ?? 1000,
+        lawyerPriceInr: config.lawyer_price_inr ?? config.price_inr ?? 2000,
+        ipPriceInr: config.ip_price_inr ?? 2500,
         isOpen: config.is_registration_open,
         isNeon: isNeonConfigured(),
       },

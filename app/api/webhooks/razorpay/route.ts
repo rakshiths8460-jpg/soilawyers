@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateAttendeePayment, getAttendeeByOrderId, getAttendeeByTicketId } from '@/lib/db';
+import { updateAttendeePayment, getAttendeeByOrderId, getAttendeeByTicketId, getCategoryFee } from '@/lib/db';
 import { verifyWebhookSignature } from '@/lib/razorpay';
 
 export async function POST(request: Request) {
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
                          (ticketId ? await getAttendeeByTicketId(ticketId) : null);
 
         if (existing) {
-          const finalAmount = amountInRupees || existing.fee_amount || (existing.category?.toLowerCase().includes('student') ? 1000 : 2000);
+          const finalAmount = amountInRupees || existing.fee_amount || getCategoryFee(existing.category || '');
           // Idempotent update: mark paid and record captured revenue
           await updateAttendeePayment(
             { ticket_id: existing.ticket_id },
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
                          (ticketId ? await getAttendeeByTicketId(ticketId) : null);
 
         if (existing && existing.payment_status !== 'paid') {
-          const finalAmount = amountInRupees || existing.fee_amount || (existing.category?.toLowerCase().includes('student') ? 1000 : 2000);
+          const finalAmount = amountInRupees || existing.fee_amount || getCategoryFee(existing.category || '');
           await updateAttendeePayment(
             { ticket_id: existing.ticket_id },
             {

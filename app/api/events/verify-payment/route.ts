@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateAttendeePayment, getAttendeeByTicketId, getAttendeeByOrderId } from '@/lib/db';
+import { updateAttendeePayment, getAttendeeByTicketId, getAttendeeByOrderId, getCategoryFee } from '@/lib/db';
 import { verifyPaymentSignature, isRazorpayConfigured } from '@/lib/razorpay';
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     // In mock mode when keys are not configured
     if (isMock || !isRazorpayConfigured()) {
       const existingMock = await getAttendeeByTicketId(ticket_id);
-      const feeToCapture = existingMock?.fee_amount || 1000;
+      const feeToCapture = existingMock?.fee_amount || (existingMock ? getCategoryFee(existingMock.category || '') : 2000);
       const mockUpdated = await updateAttendeePayment(
         { ticket_id },
         {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     }
 
     // Idempotent update: mark paid and capture the exact fee amount
-    const feeToCapture = existing.fee_amount || (existing.category?.toLowerCase().includes('student') ? 1000 : 2000);
+    const feeToCapture = existing.fee_amount || getCategoryFee(existing.category || '');
     const updatedAttendee = await updateAttendeePayment(
       { ticket_id: existing.ticket_id },
       {

@@ -183,11 +183,15 @@ export default function IbcEventPage() {
   const [eventSettings, setEventSettings] = useState<{
     price_inr: number;
     student_price_inr: number;
+    lawyer_price_inr?: number;
+    ip_price_inr?: number;
     is_registration_open: boolean;
     max_capacity: number;
   }>({
     price_inr: 2000,
     student_price_inr: 1000,
+    lawyer_price_inr: 2000,
+    ip_price_inr: 2500,
     is_registration_open: true,
     max_capacity: 200,
   });
@@ -198,7 +202,7 @@ export default function IbcEventPage() {
     phone: '',
     organization: '',
     designation: '',
-    category: 'Advocate / NCLT Practitioner',
+    category: 'Advocate / Lawyer',
   });
 
   const [loading, setLoading] = useState(false);
@@ -206,10 +210,26 @@ export default function IbcEventPage() {
   const [registeredAttendee, setRegisteredAttendee] = useState<any>(null);
   const [activeChartYear, setActiveChartYear] = useState<string>('FY26');
 
-  const isStudentCategory = (form.category || '').toLowerCase().includes('student');
   const professionalFee = eventSettings.price_inr !== undefined ? eventSettings.price_inr : 2000;
   const studentFee = eventSettings.student_price_inr !== undefined ? eventSettings.student_price_inr : 1000;
-  const activeFee = isStudentCategory ? studentFee : professionalFee;
+  const lawyerFee = eventSettings.lawyer_price_inr !== undefined ? eventSettings.lawyer_price_inr : 2000;
+  const ipFee = eventSettings.ip_price_inr !== undefined ? eventSettings.ip_price_inr : 2500;
+
+  const isStudentCategory = (form.category || '').toLowerCase().includes('student');
+  const isInsolvencyCategory =
+    (form.category || '').toLowerCase().includes('insolvency') ||
+    (form.category || '').toLowerCase().includes('ip');
+  const isLawyerCategory =
+    (form.category || '').toLowerCase().includes('advocate') ||
+    (form.category || '').toLowerCase().includes('lawyer');
+
+  const activeFee = isStudentCategory
+    ? studentFee
+    : isInsolvencyCategory
+    ? ipFee
+    : isLawyerCategory
+    ? lawyerFee
+    : professionalFee;
 
   // Fetch dynamic price and status
   useEffect(() => {
@@ -966,14 +986,20 @@ export default function IbcEventPage() {
               <div>
                 <h3 className="font-serif text-2xl font-bold text-white">Delegate Registration Form</h3>
                 <p className="text-xs text-[#cfc8b9] mt-1">
-                  Limited to 200 delegates • Special subsidized rate available for Students of Law
+                  Limited to 200 delegates &bull; Lawyers ₹{lawyerFee.toLocaleString('en-IN')} &bull; Insolvency Professionals ₹{ipFee.toLocaleString('en-IN')} &bull; Students ₹{studentFee.toLocaleString('en-IN')}
                 </p>
               </div>
-              <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-2.5">
                 <div className="px-3.5 py-1.5 rounded-xl bg-[#091a13] border border-[#c5a880]/40 text-center sm:text-right">
-                  <span className="text-[10px] uppercase tracking-widest text-[#c5a880] block">Professional</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[#c5a880] block">Lawyer / Advocate</span>
                   <span className="font-serif text-sm sm:text-base font-bold text-white">
-                    {professionalFee > 0 ? `₹${professionalFee.toLocaleString('en-IN')}` : 'Complimentary'}
+                    {lawyerFee > 0 ? `₹${lawyerFee.toLocaleString('en-IN')}` : 'Complimentary'}
+                  </span>
+                </div>
+                <div className="px-3.5 py-1.5 rounded-xl bg-[#091a13] border border-amber-500/40 text-center sm:text-right">
+                  <span className="text-[10px] uppercase tracking-widest text-amber-300 block">Insolvency Prof. (IP)</span>
+                  <span className="font-serif text-sm sm:text-base font-bold text-amber-200">
+                    {ipFee > 0 ? `₹${ipFee.toLocaleString('en-IN')}` : 'Complimentary'}
                   </span>
                 </div>
                 <div className="px-3.5 py-1.5 rounded-xl bg-[#091a13] border border-emerald-500/40 text-center sm:text-right">
@@ -1045,7 +1071,7 @@ export default function IbcEventPage() {
                         phone: '',
                         organization: '',
                         designation: '',
-                        category: 'Advocate / NCLT Practitioner',
+                        category: 'Advocate / Lawyer',
                       });
                     }}
                     className="px-6 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#c5a880] text-[#0a1c15] hover:bg-[#dfcfb3]"
@@ -1138,18 +1164,26 @@ export default function IbcEventPage() {
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                       className="w-full bg-[#081711] border border-[#c5a880]/30 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-[#c5a880] transition-colors"
                     >
-                      <option value="Advocate / NCLT Practitioner">Advocate / NCLT Practitioner (₹{professionalFee.toLocaleString('en-IN')})</option>
-                      <option value="Insolvency Professional (IP)">Insolvency Professional (IP) (₹{professionalFee.toLocaleString('en-IN')})</option>
+                      <option value="Advocate / Lawyer">Advocate / Lawyer (₹{lawyerFee.toLocaleString('en-IN')})</option>
+                      <option value="Insolvency Professional (IP)">Insolvency Professional (IP) (₹{ipFee.toLocaleString('en-IN')})</option>
+                      <option value="Student of Law">Student of Law (Concession · ₹{studentFee.toLocaleString('en-IN')})</option>
                       <option value="Chartered Accountant / CS">Chartered Accountant / CS (₹{professionalFee.toLocaleString('en-IN')})</option>
                       <option value="Banker / Stressed Assets Team">Banker / Stressed Assets Team (₹{professionalFee.toLocaleString('en-IN')})</option>
                       <option value="Judicial / Academic Scholar">Judicial / Academic Scholar (₹{professionalFee.toLocaleString('en-IN')})</option>
-                      <option value="Student of Law">Student of Law (Concession · ₹{studentFee.toLocaleString('en-IN')})</option>
                       <option value="Corporate Counsel / Officer">Corporate Counsel / Officer (₹{professionalFee.toLocaleString('en-IN')})</option>
                     </select>
                     <div className="mt-1.5 flex items-center text-[11px]">
                       {isStudentCategory ? (
                         <span className="text-emerald-300 font-medium">
                           🎓 Student concession applied: ₹{studentFee.toLocaleString('en-IN')}
+                        </span>
+                      ) : isInsolvencyCategory ? (
+                        <span className="text-amber-300 font-medium">
+                          ⚖️ Insolvency Professional rate: ₹{ipFee.toLocaleString('en-IN')}
+                        </span>
+                      ) : isLawyerCategory ? (
+                        <span className="text-[#c5a880] font-medium">
+                          📜 Advocate / Lawyer rate: ₹{lawyerFee.toLocaleString('en-IN')}
                         </span>
                       ) : (
                         <span className="text-[#c5a880] font-medium">
@@ -1208,7 +1242,19 @@ export default function IbcEventPage() {
                       <span>Reserving Accreditation...</span>
                     ) : (
                       <>
-                        <span>{activeFee > 0 ? `Pay ₹${activeFee.toLocaleString('en-IN')} & Confirm (${isStudentCategory ? 'Student' : 'Professional'})` : 'Confirm Delegate Seat'}</span>
+                        <span>
+                          {activeFee > 0
+                            ? `Pay ₹${activeFee.toLocaleString('en-IN')} & Confirm (${
+                                isStudentCategory
+                                  ? 'Student'
+                                  : isInsolvencyCategory
+                                  ? 'Insolvency Prof.'
+                                  : isLawyerCategory
+                                  ? 'Lawyer'
+                                  : 'Professional'
+                              })`
+                            : 'Confirm Delegate Seat'}
+                        </span>
                         <ArrowRight className="ml-2 w-4 h-4" />
                       </>
                     )}
