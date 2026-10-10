@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -129,7 +130,7 @@ const SCHEDULE = [
     time: '10:00 – 11:30',
     phase: 'MORNING',
     title: 'Inaugural Session · IBC Turns 10, the Decade in Retrospect',
-    description: 'The ceremonial opening of the conference: lighting of the lamp, the welcome address by the conveners, the inaugural address by the Chief Guest, reflections from the Bench, the Bar and the regulator on ten years of the Code, felicitation of dignitaries, and the vote of thanks.',
+    description: 'The ceremonial opening addressed by Hon\'ble Mr. Justice Rajesh Bindal (Former Judge, Supreme Court of India) and Hon\'ble Mr. Justice Anupinder Singh Grewal (President, National Company Law Tribunal): lighting of the lamp, welcome address by the conveners, inaugural address, reflections from the Bench, Bar and regulator, felicitation of dignitaries, and vote of thanks.',
     type: 'plenary'
   },
   {
@@ -499,6 +500,49 @@ export default function IbcEventPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          OFFICIAL CONFERENCE POSTER & INAUGURAL SESSION DIGNITARIES
+          ========================================================================= */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-10 text-center">
+        <div className="space-y-3 max-w-3xl mx-auto">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#0a1e16] border border-[#c5a880]/30 text-[11px] font-sans uppercase tracking-[0.25em] text-[#dfcfb3]">
+            <Sparkles className="w-3.5 h-3.5 text-[#c5a880]" />
+            <span>OFFICIAL ASSEMBLY POSTER</span>
+          </div>
+          <h2 className="font-serif text-3xl sm:text-5xl font-bold text-white">
+            Inaugural Session Dignitaries
+          </h2>
+          <p className="text-xs sm:text-sm text-[#cfc8b9] max-w-xl mx-auto">
+            Hon&apos;ble Mr. Justice Rajesh Bindal (Former Judge, Supreme Court of India) and Hon&apos;ble Mr. Justice Anupinder Singh Grewal (President, National Company Law Tribunal) will address the inaugural session on 24 October 2026.
+          </p>
+        </div>
+
+        <div className="max-w-xl mx-auto">
+          <div className="p-1 sm:p-2 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#c5a880]/40 via-[#c5a880]/20 to-transparent border border-[#c5a880]/30 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)]">
+            <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden bg-[#071710]">
+              <Image
+                src="/images/ibc_turns_10_poster.jpg"
+                alt="IBC Turns 10 Official Poster - 24 October 2026, Chandigarh"
+                width={724}
+                height={1024}
+                className="w-full h-auto object-contain select-none"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <a
+            href="#register"
+            className="inline-flex items-center justify-center px-8 py-3.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#c5a880] text-[#0a1c15] hover:bg-[#dfcfb3] transition-all shadow-xl font-sans"
+          >
+            <span>Proceed to Delegate Registration</span>
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </a>
         </div>
       </section>
 

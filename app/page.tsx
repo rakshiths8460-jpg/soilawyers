@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowUpRight, Scale, Shield, Compass, Landmark } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Scale, Shield, Compass, Landmark, Sparkles } from 'lucide-react';
 import ContactSection from '@/components/ContactSection';
 import GsapHeroEffects from '@/components/GsapHeroEffects';
 import InteractiveObjectives from '@/components/InteractiveObjectives';
@@ -156,6 +156,58 @@ export default function HomePage() {
               <p className="text-xs text-slate-400 font-sans">
                 Promoting legal aid, research, and young advocate mentorship.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURED: IBC TURNS 10 OFFICIAL CONFERENCE POSTER */}
+      <section className="py-20 sm:py-28 bg-institutional-950 hairline-t relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-14 space-y-3">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-bronze-400/10 border border-bronze-400/30 text-[11px] font-sans uppercase tracking-[0.22em] text-bronze-300">
+              <Sparkles className="w-3.5 h-3.5 text-bronze-400" />
+              <span>National Conference &bull; 24 October 2026 &bull; Chandigarh</span>
+            </div>
+            <h2 className="font-serif text-3xl sm:text-5xl font-bold text-white tracking-tight leading-tight">
+              Official Conference Poster
+            </h2>
+            <p className="text-sm sm:text-base text-slate-300 font-sans leading-relaxed max-w-2xl mx-auto">
+              Inaugural Session addressed by Hon&apos;ble Mr. Justice Rajesh Bindal (Former Judge, Supreme Court of India) and Hon&apos;ble Mr. Justice Anupinder Singh Grewal (President, National Company Law Tribunal).
+            </p>
+          </div>
+
+          {/* Centered Poster Presentation with Architectural Frame */}
+          <div className="max-w-xl mx-auto flex flex-col items-center">
+            <div className="w-full p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-bronze-400/40 via-bronze-400/15 to-transparent border border-bronze-400/30 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)]">
+              <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden bg-institutional-900 border border-white/5">
+                <Image
+                  src="/images/ibc_turns_10_poster.jpg"
+                  alt="IBC Turns 10 Official Conference Poster - Society of Indian Lawyers & INSOL India"
+                  width={724}
+                  height={1024}
+                  className="w-full h-auto object-contain select-none"
+                  priority
+                />
+              </div>
+            </div>
+
+            {/* Below-Image Action CTA Button to Registration Page */}
+            <div className="pt-8 sm:pt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+              <Link
+                href="/events/ibc-turns-10#register"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-full text-xs font-semibold uppercase tracking-[0.16em] text-institutional-950 bg-bronze-400 hover:bg-bronze-300 transition-all duration-200 active:scale-[0.98] shadow-2xl group font-sans"
+              >
+                <span>Register for IBC Turns 10 (Accreditation)</span>
+                <ArrowRight className="ml-2.5 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                href="/events/ibc-turns-10"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-4 rounded-full text-xs font-semibold uppercase tracking-[0.16em] text-slate-200 border border-white/20 hover:border-bronze-400/60 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] transition-all font-sans"
+              >
+                <span>View Full Conference Details</span>
+              </Link>
             </div>
           </div>
         </div>
