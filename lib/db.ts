@@ -30,15 +30,13 @@ export function getCategoryFee(
 ): number {
   const cat = (category || '').toLowerCase().trim();
   const studentFee = config?.student_price_inr ?? 1000;
-  const ipFee = config?.ip_price_inr ?? 2500;
-  const lawyerFee = config?.lawyer_price_inr ?? config?.price_inr ?? 2000;
   const standardFee = config?.price_inr ?? 2000;
 
   if (cat.includes('student')) {
     return studentFee;
   }
   if (cat.includes('insolvency') || cat.includes('ip') || cat.includes('resolution professional')) {
-    return ipFee;
+    return config?.ip_price_inr ?? standardFee;
   }
   if (
     cat.includes('lawyer') ||
@@ -47,7 +45,7 @@ export function getCategoryFee(
     cat.includes('counsel') ||
     cat.includes('bar')
   ) {
-    return lawyerFee;
+    return config?.lawyer_price_inr ?? standardFee;
   }
   return standardFee;
 }

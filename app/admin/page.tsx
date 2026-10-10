@@ -41,8 +41,6 @@ export default function AdminDashboardPage() {
   // Price modification state
   const [editPrice, setEditPrice] = useState<number>(2000);
   const [editStudentPrice, setEditStudentPrice] = useState<number>(1000);
-  const [editLawyerPrice, setEditLawyerPrice] = useState<number>(2000);
-  const [editIpPrice, setEditIpPrice] = useState<number>(2500);
   const [editIsOpen, setEditIsOpen] = useState<boolean>(true);
   const [editCapacity, setEditCapacity] = useState<number>(200);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -90,8 +88,6 @@ export default function AdminDashboardPage() {
         setStats(data.stats);
         setEditPrice(data.stats.priceInr !== undefined ? data.stats.priceInr : 2000);
         setEditStudentPrice(data.stats.studentPriceInr !== undefined ? data.stats.studentPriceInr : 1000);
-        setEditLawyerPrice(data.stats.lawyerPriceInr !== undefined ? data.stats.lawyerPriceInr : 2000);
-        setEditIpPrice(data.stats.ipPriceInr !== undefined ? data.stats.ipPriceInr : 2500);
         setEditIsOpen(data.stats.isOpen);
         setEditCapacity(data.stats.maxCapacity);
       }
@@ -113,8 +109,8 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           price_inr: editPrice,
           student_price_inr: editStudentPrice,
-          lawyer_price_inr: editLawyerPrice,
-          ip_price_inr: editIpPrice,
+          lawyer_price_inr: editPrice,
+          ip_price_inr: editPrice,
           is_registration_open: editIsOpen,
           max_capacity: editCapacity,
         }),
@@ -271,15 +267,9 @@ export default function AdminDashboardPage() {
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Configured Pricing</span>
               <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1">
                 <div>
-                  <span className="text-[9px] uppercase text-slate-400 block font-medium">Lawyer</span>
+                  <span className="text-[9px] uppercase text-gold-300 block font-medium">Professional</span>
                   <p className="font-serif text-base font-bold text-gold-300">
-                    ₹{(stats.lawyerPriceInr ?? stats.priceInr ?? 2000).toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[9px] uppercase text-amber-400/90 block font-medium">IP</span>
-                  <p className="font-serif text-base font-bold text-amber-300">
-                    ₹{(stats.ipPriceInr ?? 2500).toLocaleString('en-IN')}
+                    ₹{(stats.priceInr ?? 2000).toLocaleString('en-IN')}
                   </p>
                 </div>
                 <div>
@@ -288,14 +278,8 @@ export default function AdminDashboardPage() {
                     ₹{(stats.studentPriceInr ?? 1000).toLocaleString('en-IN')}
                   </p>
                 </div>
-                <div>
-                  <span className="text-[9px] uppercase text-slate-400 block font-medium">Other Prof.</span>
-                  <p className="font-serif text-base font-bold text-slate-300">
-                    ₹{(stats.priceInr ?? 2000).toLocaleString('en-IN')}
-                  </p>
-                </div>
               </div>
-              <span className="text-[10px] text-slate-500 block pt-0.5">Live tiered event rates</span>
+              <span className="text-[10px] text-slate-500 block pt-0.5">Live delegate rates</span>
             </div>
           </div>
 
@@ -325,7 +309,7 @@ export default function AdminDashboardPage() {
               <div>
                 <h3 className="font-serif text-xl font-bold text-white">Event Pricing & Capacity Controller</h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Configure tiered delegate pricing for Lawyers, Insolvency Professionals, Students, and Other Professionals. Changes reflect immediately on the public event page.
+                  Configure delegate pricing for Professionals and Students. Changes reflect immediately on the public event page.
                 </p>
               </div>
               {saveSuccess && (
@@ -339,36 +323,19 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleSaveSettings} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
               <div>
                 <label className="block text-[11px] uppercase tracking-wider text-gold-300 font-semibold mb-1.5">
-                  Lawyer / Advocate Fee (₹)
+                  Professional Fee (₹)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm">₹</span>
                   <input
                     type="number"
                     min={0}
-                    value={editLawyerPrice}
-                    onChange={(e) => setEditLawyerPrice(Number(e.target.value))}
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(Number(e.target.value))}
                     className="w-full bg-legal-900 border border-gold-400/40 rounded-xl pl-8 pr-4 py-2 text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">Advocates & NCLT counsel</span>
-              </div>
-
-              <div>
-                <label className="block text-[11px] uppercase tracking-wider text-amber-300 font-semibold mb-1.5">
-                  Insolvency Prof. (IP) Fee (₹)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm">₹</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={editIpPrice}
-                    onChange={(e) => setEditIpPrice(Number(e.target.value))}
-                    className="w-full bg-legal-900 border border-amber-500/40 rounded-xl pl-8 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-                <span className="text-[10px] text-amber-400/80 mt-1 block">Insolvency professionals</span>
+                <span className="text-[10px] text-slate-400 mt-1 block">Lawyers, Counsel, IPs & Executives</span>
               </div>
 
               <div>
@@ -386,23 +353,6 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <span className="text-[10px] text-emerald-400/80 mt-1 block">Only for Students of Law</span>
-              </div>
-
-              <div>
-                <label className="block text-[11px] uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-                  Other Professional Fee (₹)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm">₹</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(Number(e.target.value))}
-                    className="w-full bg-legal-900 border border-white/10 rounded-xl pl-8 pr-4 py-2 text-sm text-white focus:outline-none focus:border-gold-400"
-                  />
-                </div>
-                <span className="text-[10px] text-slate-500 mt-1 block">CA / CS / Bankers / Officers</span>
               </div>
 
               <div>
@@ -434,7 +384,7 @@ export default function AdminDashboardPage() {
                 <span className="text-[10px] text-slate-500 mt-1 block">Live portal gate</span>
               </div>
 
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 lg:col-span-4">
                 <button
                   type="submit"
                   disabled={saveLoading}
@@ -582,7 +532,7 @@ export default function AdminDashboardPage() {
                                   : 'bg-white/5 border border-white/10 text-slate-300'
                               }`}
                             >
-                              {att.category || 'General'}
+                              {att.category || 'Professional'}
                             </span>
                           </td>
                           <td className="py-3 px-3 font-mono">

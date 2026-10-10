@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     // Server-enforced pricing based on delegate category (client cannot manipulate)
-    const userCategory = (category || 'Advocate / Lawyer').trim();
+    const userCategory = (category || 'Professional').trim();
     const price = getCategoryFee(userCategory, config);
 
     // Initial registration record (marked pending for paid events, or free for 0 fee)
